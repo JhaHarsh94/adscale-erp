@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import prisma from "./config/prisma";
 import { errorMiddleware } from "./middlewares/error.middleware";
+import authRoutes from "./modules/auth/auth.routes";
 
 dotenv.config();
 
@@ -45,6 +46,8 @@ app.get("/api/health/db", async (req: Request, res: Response) => {
     });
   }
 });
+
+app.use("/api/auth", authRoutes);
 
 app.use(errorMiddleware);
 
