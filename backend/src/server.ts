@@ -5,6 +5,7 @@ import prisma from "./config/prisma";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import departmentRoutes from "./modules/departments/department.routes";
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.get("/api/health/db", async (req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/departments", departmentRoutes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {
