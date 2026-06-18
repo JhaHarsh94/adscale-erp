@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Department {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("departments")
+}
+
+model User {
+  id       String     @id @default(uuid())
+  name     String
+  email    String     @unique
+  phone    String?
+  password String
+  status   UserStatus @default(ACTIVE)
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  employee Employee?
+
+  loginHistory     LoginHistory[]
+  deviceSessions   DeviceSession[]
+  otpVerifications OtpVerification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Employee {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  employeeCode String    @unique
+  designation  String?
+  joiningDate  DateTime?
+  salary       Float?
+  skills       String?
+  managerId    String?
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employees")
+}
+
+model LoginHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  ipAddress String?
+  device    String?
+  browser   String?
+  os        String?
+  loginAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("login_history")
+}
+
+model DeviceSession {
+  id           String   @id @default(uuid())
+  userId       String
+  deviceName   String?
+  ipAddress    String?
+  token        String?
+  isActive     Boolean  @default(true)
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("device_sessions")
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  otp       String
+  purpose   String
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("otp_verifications")
+}

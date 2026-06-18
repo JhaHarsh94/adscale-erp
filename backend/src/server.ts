@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import prisma from "./config/prisma";
 
 dotenv.config();
 
@@ -24,6 +25,24 @@ app.get("/api/health", (req: Request, res: Response) => {
     status: "healthy",
     service: "AdScale One ERP API",
   });
+});
+
+app.get("/api/health/db", async (req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      success: true,
+      status: "connected",
+      database: "PostgreSQL",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      status: "database connection failed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
 });
 
 app.listen(PORT, () => {
