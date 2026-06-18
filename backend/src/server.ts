@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import prisma from "./config/prisma";
+import { errorMiddleware } from "./middlewares/error.middleware";
 
 dotenv.config();
 
@@ -44,6 +45,8 @@ app.get("/api/health/db", async (req: Request, res: Response) => {
     });
   }
 });
+
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
