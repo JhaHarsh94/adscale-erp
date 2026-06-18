@@ -6,6 +6,8 @@ import { comparePassword, hashPassword } from "../../utils/password";
 import { generateToken } from "../../utils/jwt";
 import { successResponse } from "../../utils/response";
 import { AuthRequest } from "../../middlewares/auth.middleware";
+import { generateOtp, getOtpExpiry } from "../../utils/otp";
+import { sendOtpEmail } from "../../utils/email";
 
 export const register = asyncHandler(async (req, res: Response) => {
   const { name, email, phone, password, roleName } = req.body;
@@ -192,4 +194,161 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
   }
 
   return successResponse(res, 200, "Logout successful");
+});
+
+export const forgotPassword = asyncHandler(async (req, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new AppError("Email is required", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: normalizedEmail,
+    },
+  });
+
+  if (!user) {
+    throw new AppError("No user found with this email", 404);
+  }
+
+  await prisma.otpVerification.updateMany({
+    where: {
+      email: normalizedEmail,
+      purpose: "FORGOT_PASSWORD",
+      isUsed: false,
+    },
+    data: {
+      isUsed: true,
+    },
+  });
+
+  const otp = generateOtp();
+
+  await prisma.otpVerification.create({
+    data: {
+      userId: user.id,
+      email: normalizedEmail,
+      otp,
+      purpose: "FORGOT_PASSWORD",
+      expiresAt: getOtpExpiry(),
+    },
+  });
+
+  await sendOtpEmail({
+    to: normalizedEmail,
+    otp,
+    purpose: "Forgot Password",
+  });
+
+  return successResponse(res, 200, "Password reset OTP sent successfully");
+});
+
+export const verifyOtp = asyncHandler(async (req, res: Response) => {
+  const { email, otp, purpose } = req.body;
+
+  if (!email || !otp) {
+    throw new AppError("Email and OTP are required", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const otpRecord = await prisma.otpVerification.findFirst({
+    where: {
+      email: normalizedEmail,
+      otp,
+      purpose: purpose || "FORGOT_PASSWORD",
+      isUsed: false,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!otpRecord) {
+    throw new AppError("Invalid or expired OTP", 400);
+  }
+
+  return successResponse(res, 200, "OTP verified successfully");
+});
+
+export const resetPassword = asyncHandler(async (req, res: Response) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    throw new AppError("Email, OTP and new password are required", 400);
+  }
+
+  if (newPassword.length < 6) {
+    throw new AppError("Password must be at least 6 characters", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: normalizedEmail,
+    },
+  });
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const otpRecord = await prisma.otpVerification.findFirst({
+    where: {
+      email: normalizedEmail,
+      otp,
+      purpose: "FORGOT_PASSWORD",
+      isUsed: false,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!otpRecord) {
+    throw new AppError("Invalid or expired OTP", 400);
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  await prisma.otpVerification.update({
+    where: {
+      id: otpRecord.id,
+    },
+    data: {
+      isUsed: true,
+    },
+  });
+
+  await prisma.deviceSession.updateMany({
+    where: {
+      userId: user.id,
+      isActive: true,
+    },
+    data: {
+      isActive: false,
+    },
+  });
+
+  return successResponse(res, 200, "Password reset successfully");
 });
