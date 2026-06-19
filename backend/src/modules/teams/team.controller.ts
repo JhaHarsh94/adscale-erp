@@ -16,6 +16,23 @@ export const getTeams = asyncHandler(async (req, res: Response) => {
           name: true,
         },
       },
+      members: {
+        include: {
+          employee: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -34,6 +51,35 @@ export const getTeamById = asyncHandler(async (req, res: Response) => {
         select: {
           id: true,
           name: true,
+        },
+      },
+      members: {
+        include: {
+          employee: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  status: true,
+                },
+              },
+              department: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              designation: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -153,7 +199,9 @@ export const updateTeam = asyncHandler(async (req, res: Response) => {
     data: {
       name: newName,
       description:
-        description !== undefined ? description?.trim() || null : team.description,
+        description !== undefined
+          ? description?.trim() || null
+          : team.description,
       departmentId: newDepartmentId,
     },
     include: {
@@ -189,4 +237,203 @@ export const deleteTeam = asyncHandler(async (req, res: Response) => {
   });
 
   return successResponse(res, 200, "Team deleted successfully");
+});
+
+export const getTeamMembers = asyncHandler(async (req, res: Response) => {
+  const { id } = req.params;
+
+  const team = await prisma.team.findUnique({
+    where: { id },
+  });
+
+  if (!team) {
+    throw new AppError("Team not found", 404);
+  }
+
+  const members = await prisma.teamMember.findMany({
+    where: {
+      teamId: id,
+    },
+    include: {
+      employee: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              status: true,
+            },
+          },
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          designation: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      joinedAt: "desc",
+    },
+  });
+
+  return successResponse(res, 200, "Team members fetched successfully", members);
+});
+
+export const addTeamMember = asyncHandler(async (req, res: Response) => {
+  const { id } = req.params;
+  const { employeeId, role } = req.body;
+
+  if (!employeeId) {
+    throw new AppError("Employee ID is required", 400);
+  }
+
+  const team = await prisma.team.findUnique({
+    where: { id },
+  });
+
+  if (!team) {
+    throw new AppError("Team not found", 404);
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+  });
+
+  if (!employee) {
+    throw new AppError("Employee not found", 404);
+  }
+
+  const existingMember = await prisma.teamMember.findUnique({
+    where: {
+      teamId_employeeId: {
+        teamId: id,
+        employeeId,
+      },
+    },
+  });
+
+  if (existingMember) {
+    throw new AppError("Employee is already assigned to this team", 409);
+  }
+
+  const member = await prisma.teamMember.create({
+    data: {
+      teamId: id,
+      employeeId,
+      role: role || "MEMBER",
+    },
+    include: {
+      employee: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              status: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return successResponse(res, 201, "Employee added to team successfully", member);
+});
+
+export const updateTeamMemberRole = asyncHandler(
+  async (req, res: Response) => {
+    const { id, employeeId } = req.params;
+    const { role } = req.body;
+
+    if (!role) {
+      throw new AppError("Team member role is required", 400);
+    }
+
+    const existingMember = await prisma.teamMember.findUnique({
+      where: {
+        teamId_employeeId: {
+          teamId: id,
+          employeeId,
+        },
+      },
+    });
+
+    if (!existingMember) {
+      throw new AppError("Team member not found", 404);
+    }
+
+    const updatedMember = await prisma.teamMember.update({
+      where: {
+        teamId_employeeId: {
+          teamId: id,
+          employeeId,
+        },
+      },
+      data: {
+        role,
+      },
+      include: {
+        employee: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return successResponse(
+      res,
+      200,
+      "Team member role updated successfully",
+      updatedMember
+    );
+  }
+);
+
+export const removeTeamMember = asyncHandler(async (req, res: Response) => {
+  const { id, employeeId } = req.params;
+
+  const existingMember = await prisma.teamMember.findUnique({
+    where: {
+      teamId_employeeId: {
+        teamId: id,
+        employeeId,
+      },
+    },
+  });
+
+  if (!existingMember) {
+    throw new AppError("Team member not found", 404);
+  }
+
+  await prisma.teamMember.delete({
+    where: {
+      teamId_employeeId: {
+        teamId: id,
+        employeeId,
+      },
+    },
+  });
+
+  return successResponse(res, 200, "Employee removed from team successfully");
 });
