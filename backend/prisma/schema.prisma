@@ -86,6 +86,22 @@ model TeamMember {
   @@map("team_members")
 }
 
+
+model ReportingHierarchy {
+  id          String   @id @default(uuid())
+  employeeId  String   @unique
+  reportsToId String?
+
+  employee  Employee  @relation("ReportingEmployee", fields: [employeeId], references: [id])
+  reportsTo Employee? @relation("ReportingManager", fields: [reportsToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reporting_hierarchy")
+}
+
+
 model User {
   id       String     @id @default(uuid())
   name     String
@@ -116,6 +132,9 @@ model Employee {
 
   designationId String?
   designation   Designation? @relation(fields: [designationId], references: [id])
+
+  reportingAsEmployee ReportingHierarchy[] @relation("ReportingEmployee")
+reportingAsManager  ReportingHierarchy[] @relation("ReportingManager")
 
   joiningDate DateTime?
   salary      Float?
