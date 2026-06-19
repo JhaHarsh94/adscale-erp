@@ -30,6 +30,7 @@ model Department {
   description  String?
   employees    Employee[]
   designations Designation[]
+  teams        Team[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -48,6 +49,19 @@ model Designation {
 
   @@unique([name, departmentId])
   @@map("designations")
+}
+
+model Team {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([name, departmentId])
+  @@map("teams")
 }
 
 model User {
