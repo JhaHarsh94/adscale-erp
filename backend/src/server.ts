@@ -9,6 +9,7 @@ import departmentRoutes from "./modules/departments/department.routes";
 import designationRoutes from "./modules/designations/designation.routes";
 import teamRoutes from "./modules/teams/team.routes";
 import reportingHierarchyRoutes from "./modules/reportingHierarchy/reportingHierarchy.routes";
+import organizationRoutes from "./modules/organization/organization.routes";
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/designations", designationRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/reporting-hierarchy", reportingHierarchyRoutes);
+app.use("/api/organization", organizationRoutes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {
