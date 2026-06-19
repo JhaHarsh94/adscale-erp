@@ -25,14 +25,29 @@ model Role {
 }
 
 model Department {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  employees   Employee[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id           String        @id @default(uuid())
+  name         String        @unique
+  description  String?
+  employees    Employee[]
+  designations Designation[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@map("departments")
+}
+
+model Designation {
+  id           String      @id @default(uuid())
+  name         String
+  description  String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  employees    Employee[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([name, departmentId])
+  @@map("designations")
 }
 
 model User {
@@ -59,14 +74,17 @@ model User {
 }
 
 model Employee {
-  id           String    @id @default(uuid())
-  userId       String    @unique
-  employeeCode String    @unique
-  designation  String?
-  joiningDate  DateTime?
-  salary       Float?
-  skills       String?
-  managerId    String?
+  id           String @id @default(uuid())
+  userId       String @unique
+  employeeCode String @unique
+
+  designationId String?
+  designation   Designation? @relation(fields: [designationId], references: [id])
+
+  joiningDate DateTime?
+  salary      Float?
+  skills      String?
+  managerId   String?
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])

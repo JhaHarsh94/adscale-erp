@@ -6,6 +6,7 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import departmentRoutes from "./modules/departments/department.routes";
+import designationRoutes from "./modules/designations/designation.routes";
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.get("/api/health/db", async (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/designations", designationRoutes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {
