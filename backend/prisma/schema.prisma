@@ -13,6 +13,31 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum EmploymentStatus {
+  ACTIVE
+  ON_PROBATION
+  INACTIVE
+  RESIGNED
+  TERMINATED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum EmployeeDocumentType {
+  AADHAAR
+  PAN
+  RESUME
+  OFFER_LETTER
+  EXPERIENCE_LETTER
+  CERTIFICATE
+  OTHER
+}
+
 enum TeamMemberRole {
   TEAM_LEAD
   MEMBER
@@ -86,10 +111,9 @@ model TeamMember {
   @@map("team_members")
 }
 
-
 model ReportingHierarchy {
-  id          String   @id @default(uuid())
-  employeeId  String   @unique
+  id          String  @id @default(uuid())
+  employeeId  String  @unique
   reportsToId String?
 
   employee  Employee  @relation("ReportingEmployee", fields: [employeeId], references: [id])
@@ -101,6 +125,59 @@ model ReportingHierarchy {
   @@map("reporting_hierarchy")
 }
 
+model EmployeeDocument {
+  id         String               @id @default(uuid())
+  employeeId String
+  type       EmployeeDocumentType @default(OTHER)
+  name       String
+  fileUrl    String?
+  fileKey    String?
+  notes      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employee_documents")
+}
+
+model EmployeeSkill {
+  id                String     @id @default(uuid())
+  employeeId        String
+  skillName         String
+  level             SkillLevel @default(BEGINNER)
+  yearsOfExperience Float?
+  notes             String?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, skillName])
+  @@map("employee_skills")
+}
+
+model EmployeeSalaryDetail {
+  id            String    @id @default(uuid())
+  employeeId    String
+  basicSalary   Float
+  hra           Float     @default(0)
+  allowances    Float     @default(0)
+  deductions    Float     @default(0)
+  netSalary     Float
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isCurrent     Boolean   @default(true)
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employee_salary_details")
+}
 
 model User {
   id       String     @id @default(uuid())
@@ -134,12 +211,20 @@ model Employee {
   designation   Designation? @relation(fields: [designationId], references: [id])
 
   reportingAsEmployee ReportingHierarchy[] @relation("ReportingEmployee")
-reportingAsManager  ReportingHierarchy[] @relation("ReportingManager")
+  reportingAsManager  ReportingHierarchy[] @relation("ReportingManager")
 
-  joiningDate DateTime?
-  salary      Float?
-  skills      String?
-  managerId   String?
+  joiningDate      DateTime?
+  salary           Float?
+  skills           String?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+
+  managerId    String?
+  manager      Employee?  @relation("EmployeeManager", fields: [managerId], references: [id])
+  subordinates Employee[] @relation("EmployeeManager")
+
+  documents      EmployeeDocument[]
+  employeeSkills EmployeeSkill[]
+  salaryDetails  EmployeeSalaryDetail[]
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])

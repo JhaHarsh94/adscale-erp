@@ -37,10 +37,10 @@ function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d1fae5,transparent_35%),linear-gradient(135deg,#f8fafc,#ecfdf5,#ffffff)] px-5 py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe,transparent_35%),linear-gradient(135deg,#f8fafc,#eff6ff,#ffffff)] px-5 py-8">
       <section className="mx-auto grid min-h-[90vh] max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/70 px-4 py-2 text-sm font-bold text-blue-700 shadow-sm backdrop-blur">
             <ShieldCheck size={18} />
             AdScale One ERP
           </div>
@@ -58,7 +58,7 @@ function LoginPage() {
             {["Secure", "Role Based", "Scalable"].map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-emerald-100 bg-white/80 p-4 text-center shadow-sm"
+                className="rounded-2xl border border-blue-100 bg-white/80 p-4 text-center shadow-sm"
               >
                 <p className="text-sm font-black text-slate-900">{item}</p>
               </div>
@@ -66,9 +66,9 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-emerald-100 bg-white/90 p-6 shadow-2xl shadow-emerald-100 backdrop-blur md:p-8">
+        <div className="rounded-[2rem] border border-blue-100 bg-white/90 p-6 shadow-2xl shadow-blue-100 backdrop-blur md:p-8">
           <div className="mb-8">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-600">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
               Welcome Back
             </p>
             <h2 className="mt-2 text-3xl font-black text-slate-950">
@@ -84,7 +84,7 @@ function LoginPage() {
               <span className="mb-2 block text-sm font-bold text-slate-700">
                 Email Address
               </span>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-emerald-400 focus-within:bg-white">
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-blue-400 focus-within:bg-white">
                 <Mail className="text-slate-400" size={20} />
                 <input
                   className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none"
@@ -101,7 +101,7 @@ function LoginPage() {
               <span className="mb-2 block text-sm font-bold text-slate-700">
                 Password
               </span>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-emerald-400 focus-within:bg-white">
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-blue-400 focus-within:bg-white">
                 <Lock className="text-slate-400" size={20} />
                 <input
                   className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none"
@@ -123,7 +123,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white shadow-xl shadow-emerald-200 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-black text-white shadow-xl shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? "Logging in..." : "Login to Dashboard"}
               {!loading && <ArrowRight size={18} />}
