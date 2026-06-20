@@ -13,6 +13,7 @@ import {
   UsersRound,
   X,
   CalendarCheck,
+  CalendarDays
 } from "lucide-react";
 import { getUser, logout } from "../../lib/auth";
 
@@ -61,6 +62,11 @@ const navItems = [
     label: "Attendance",
     path: "/attendance",
     icon: CalendarCheck,
+  },
+  {
+    label: "Leave Management",
+    path: "/leave-management",
+    icon: CalendarDays,
   }
 ];
 

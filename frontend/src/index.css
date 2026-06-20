@@ -32,3 +32,19 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #60a5fa;
+  background: #ffffff;
+}
