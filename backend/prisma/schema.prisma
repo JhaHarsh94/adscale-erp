@@ -45,6 +45,38 @@ enum TeamMemberRole {
   FREELANCER
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  ON_LEAVE
+}
+
+enum AttendanceMethod {
+  NORMAL
+  QR
+  SELFIE
+  GPS
+  BIOMETRIC
+  MANUAL
+}
+
+enum AttendanceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BiometricProvider {
+  WEBAUTHN
+  MANTRA
+  SECUGEN
+  ZKTECO
+  ESSL
+  OTHER
+}
+
 model Role {
   id          String   @id @default(uuid())
   name        String   @unique
@@ -233,6 +265,11 @@ model Employee {
 
   teamMemberships TeamMember[]
 
+  attendances          Attendance[]
+  attendanceRequests   AttendanceRequest[]
+  biometricEnrollments BiometricEnrollment[]
+  biometricLogs        BiometricAttendanceLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -251,6 +288,214 @@ model LoginHistory {
   user User @relation(fields: [userId], references: [id])
 
   @@map("login_history")
+}
+
+model Attendance {
+  id             String   @id @default(uuid())
+  employeeId     String
+  attendanceDate DateTime
+
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+
+  checkInMethod  AttendanceMethod?
+  checkOutMethod AttendanceMethod?
+
+  totalBreakMins Int @default(0)
+  totalWorkMins  Int @default(0)
+
+  status    AttendanceStatus @default(PRESENT)
+  isLate    Boolean          @default(false)
+  isHalfDay Boolean          @default(false)
+
+  checkInQrSessionId  String?
+  checkOutQrSessionId String?
+
+  checkInSelfieUrl  String?
+  checkOutSelfieUrl String?
+
+  checkInLatitude   Float?
+  checkInLongitude  Float?
+  checkOutLatitude  Float?
+  checkOutLongitude Float?
+
+  checkInAccuracyM  Float?
+  checkOutAccuracyM Float?
+
+  checkInLocationVerified  Boolean @default(false)
+  checkOutLocationVerified Boolean @default(false)
+
+  checkInBiometricVerified  Boolean @default(false)
+  checkOutBiometricVerified Boolean @default(false)
+
+  checkInBiometricDeviceId  String?
+  checkOutBiometricDeviceId String?
+
+  checkInBiometricUserId  String?
+  checkOutBiometricUserId String?
+
+  checkInBiometricLogId  String?
+  checkOutBiometricLogId String?
+
+  ipAddress  String?
+  deviceInfo String?
+  notes      String?
+
+  employee Employee          @relation(fields: [employeeId], references: [id])
+  breaks   AttendanceBreak[]
+
+  checkInQrSession  AttendanceQrSession? @relation("CheckInQrSession", fields: [checkInQrSessionId], references: [id])
+  checkOutQrSession AttendanceQrSession? @relation("CheckOutQrSession", fields: [checkOutQrSessionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, attendanceDate])
+  @@map("attendance")
+}
+
+model AttendanceBreak {
+  id           String    @id @default(uuid())
+  attendanceId String
+  breakStart   DateTime
+  breakEnd     DateTime?
+  durationMins Int       @default(0)
+  notes        String?
+
+  attendance Attendance @relation(fields: [attendanceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendance_breaks")
+}
+
+model AttendanceSetting {
+  id              String @id @default(uuid())
+  officeStartTime String @default("10:00")
+  officeEndTime   String @default("19:00")
+  lateAfterMins   Int    @default(15)
+  halfDayMins     Int    @default(270)
+  fullDayMins     Int    @default(480)
+
+  officeLatitude  Float?
+  officeLongitude Float?
+  gpsRadiusMeters Int    @default(200)
+
+  allowNormalAttendance      Boolean @default(true)
+  requireQrAttendance        Boolean @default(false)
+  requireSelfieAttendance    Boolean @default(false)
+  requireGpsAttendance       Boolean @default(false)
+  requireBiometricAttendance Boolean @default(false)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendance_settings")
+}
+
+model AttendanceQrSession {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  title     String?
+  validFrom DateTime
+  expiresAt DateTime
+  isActive  Boolean  @default(true)
+
+  createdById String?
+  notes       String?
+
+  checkInAttendances  Attendance[] @relation("CheckInQrSession")
+  checkOutAttendances Attendance[] @relation("CheckOutQrSession")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendance_qr_sessions")
+}
+
+model AttendanceRequest {
+  id             String                  @id @default(uuid())
+  employeeId     String
+  attendanceDate DateTime
+  requestType    String
+  reason         String?
+  status         AttendanceRequestStatus @default(PENDING)
+
+  requestedCheckInTime  DateTime?
+  requestedCheckOutTime DateTime?
+
+  approvedById String?
+  approvedAt   DateTime?
+  remarks      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendance_requests")
+}
+
+model BiometricDevice {
+  id           String            @id @default(uuid())
+  name         String
+  provider     BiometricProvider @default(OTHER)
+  model        String?
+  serialNumber String?           @unique
+  location     String?
+  apiBaseUrl   String?
+  apiKey       String?
+  isActive     Boolean           @default(true)
+
+  enrollments BiometricEnrollment[]
+  logs        BiometricAttendanceLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("biometric_devices")
+}
+
+model BiometricEnrollment {
+  id              String  @id @default(uuid())
+  employeeId      String
+  deviceId        String
+  biometricUserId String
+  isActive        Boolean @default(true)
+  notes           String?
+
+  employee Employee        @relation(fields: [employeeId], references: [id])
+  device   BiometricDevice @relation(fields: [deviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, deviceId])
+  @@unique([deviceId, biometricUserId])
+  @@map("biometric_enrollments")
+}
+
+model BiometricAttendanceLog {
+  id              String   @id @default(uuid())
+  employeeId      String?
+  deviceId        String
+  biometricUserId String
+  attendanceId    String?
+  verified        Boolean  @default(false)
+  capturedAt      DateTime
+  rawPayload      Json?
+  notes           String?
+
+  employee Employee?       @relation(fields: [employeeId], references: [id])
+  device   BiometricDevice @relation(fields: [deviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("biometric_attendance_logs")
 }
 
 model DeviceSession {
