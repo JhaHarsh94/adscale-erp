@@ -5,6 +5,7 @@ import EmployeesPage from "./pages/EmployeesPage";
 import EmployeeProfilePage from "./pages/EmployeeProfilePage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminLayout from "./components/layout/AdminLayout";
+import AttendancePage from "./pages/AttendancePage";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/employees" element={<EmployeesPage />} />
           <Route path="/employees/:id" element={<EmployeeProfilePage />} />
+          <Route path="/attendance" element={<AttendancePage />} />
         </Route>
       </Route>
     </Routes>

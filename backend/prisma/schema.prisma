@@ -77,6 +77,27 @@ enum BiometricProvider {
   OTHER
 }
 
+enum LeaveStatus {
+  PENDING
+  TEAM_LEAD_APPROVED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveDayType {
+  FULL_DAY
+  HALF_DAY
+}
+
+enum LeaveApprovalAction {
+  APPLIED
+  TEAM_LEAD_APPROVED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 model Role {
   id          String   @id @default(uuid())
   name        String   @unique
@@ -242,6 +263,10 @@ model Employee {
   designationId String?
   designation   Designation? @relation(fields: [designationId], references: [id])
 
+  leaveRequests       LeaveRequest[]     @relation("LeaveRequestEmployee")
+  leaveBalances       LeaveBalance[]
+  leaveApprovalsGiven LeaveApprovalLog[] @relation("LeaveApprovedBy")
+
   reportingAsEmployee ReportingHierarchy[] @relation("ReportingEmployee")
   reportingAsManager  ReportingHierarchy[] @relation("ReportingManager")
 
@@ -274,6 +299,91 @@ model Employee {
   updatedAt DateTime @updatedAt
 
   @@map("employees")
+}
+
+model LeaveType {
+  id               String  @id @default(uuid())
+  name             String  @unique
+  code             String  @unique
+  description      String?
+  annualQuota      Float   @default(0)
+  isPaid           Boolean @default(true)
+  requiresApproval Boolean @default(true)
+  isActive         Boolean @default(true)
+
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leave_types")
+}
+
+model LeaveBalance {
+  id             String @id @default(uuid())
+  employeeId     String
+  leaveTypeId    String
+  year           Int
+  openingBalance Float  @default(0)
+  credited       Float  @default(0)
+  used           Float  @default(0)
+  pending        Float  @default(0)
+  remaining      Float  @default(0)
+
+  employee  Employee  @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id          String       @id @default(uuid())
+  employeeId  String
+  leaveTypeId String
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Float
+  dayType     LeaveDayType @default(FULL_DAY)
+  reason      String?
+  status      LeaveStatus  @default(PENDING)
+
+  teamLeadRemarks String?
+  hrRemarks       String?
+  rejectedReason  String?
+
+  teamLeadApprovedAt DateTime?
+  hrApprovedAt       DateTime?
+  cancelledAt        DateTime?
+
+  employee  Employee  @relation("LeaveRequestEmployee", fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  approvalLogs LeaveApprovalLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leave_requests")
+}
+
+model LeaveApprovalLog {
+  id             String              @id @default(uuid())
+  leaveRequestId String
+  action         LeaveApprovalAction
+  remarks        String?
+  approvedById   String?
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  approvedBy   Employee?    @relation("LeaveApprovedBy", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("leave_approval_logs")
 }
 
 model LoginHistory {

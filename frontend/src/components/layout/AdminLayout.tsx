@@ -12,6 +12,7 @@ import {
   Ticket,
   UsersRound,
   X,
+  CalendarCheck,
 } from "lucide-react";
 import { getUser, logout } from "../../lib/auth";
 
@@ -56,6 +57,11 @@ const navItems = [
     path: "/settings",
     icon: Settings,
   },
+  {
+    label: "Attendance",
+    path: "/attendance",
+    icon: CalendarCheck,
+  }
 ];
 
 function AdminLayout() {
