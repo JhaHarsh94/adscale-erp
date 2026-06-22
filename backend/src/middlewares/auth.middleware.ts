@@ -9,6 +9,7 @@ export interface AuthRequest extends Request {
     name: string;
     email: string;
     role: string;
+    permissions: string[];
   };
 }
 
@@ -33,7 +34,13 @@ export const protect = async (
         id: decoded.userId,
       },
       include: {
-        role: true,
+        role: {
+          include: {
+            rolePermissions: {
+              include: { permission: true },
+            },
+          },
+        },
       },
     });
 
@@ -50,6 +57,9 @@ export const protect = async (
       name: user.name,
       email: user.email,
       role: user.role.name,
+      permissions: user.role.rolePermissions.map(
+        (item) => item.permission.name
+      ),
     };
 
     next();
@@ -65,6 +75,28 @@ export const allowRoles = (...roles: string[]) => {
     }
 
     if (!roles.includes(req.user.role)) {
+      return next(new AppError("You do not have permission for this action", 403));
+    }
+
+    next();
+  };
+};
+
+export const allowPermissions = (...permissions: string[]) => {
+  return (req: AuthRequest, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new AppError("User not authenticated", 401));
+    }
+
+    if (req.user.role === "SUPER_ADMIN") {
+      return next();
+    }
+
+    const hasPermission = permissions.some((permission) =>
+      req.user?.permissions.includes(permission)
+    );
+
+    if (!hasPermission) {
       return next(new AppError("You do not have permission for this action", 403));
     }
 

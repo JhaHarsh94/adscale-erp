@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const team_controller_1 = require("./team.controller");
+const router = (0, express_1.Router)();
+router.get("/", auth_middleware_1.protect, team_controller_1.getTeams);
+router.get("/:id", auth_middleware_1.protect, team_controller_1.getTeamById);
+router.post("/", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR"), team_controller_1.createTeam);
+router.put("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR"), team_controller_1.updateTeam);
+router.delete("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER"), team_controller_1.deleteTeam);
+router.get("/:id/members", auth_middleware_1.protect, team_controller_1.getTeamMembers);
+router.post("/:id/members", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR"), team_controller_1.addTeamMember);
+router.put("/:id/members/:employeeId", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR"), team_controller_1.updateTeamMemberRole);
+router.delete("/:id/members/:employeeId", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR"), team_controller_1.removeTeamMember);
+exports.default = router;

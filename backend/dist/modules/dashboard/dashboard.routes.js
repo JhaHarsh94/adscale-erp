@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const dashboard_controller_1 = require("./dashboard.controller");
+const router = (0, express_1.Router)();
+router.get("/super-admin", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN"), dashboard_controller_1.superAdminDashboard);
+router.get("/director", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR"), dashboard_controller_1.directorDashboard);
+router.get("/hr", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR"), dashboard_controller_1.hrDashboard);
+router.get("/operations", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER"), dashboard_controller_1.operationsDashboard);
+router.get("/team-lead", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "OPERATIONS_MANAGER", "TEAM_LEAD"), dashboard_controller_1.teamLeadDashboard);
+router.get("/employee", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "OPERATIONS_MANAGER", "TEAM_LEAD", "EMPLOYEE"), dashboard_controller_1.employeeDashboard);
+router.get("/client", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "CLIENT"), dashboard_controller_1.clientDashboard);
+exports.default = router;

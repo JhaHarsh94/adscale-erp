@@ -89,6 +89,67 @@ async function main() {
     },
   ];
 
+  const permissionModules = [
+    "USERS",
+    "ROLES",
+    "PERMISSIONS",
+    "DEPARTMENTS",
+    "TEAMS",
+    "DESIGNATIONS",
+    "EMPLOYEES",
+    "ATTENDANCE",
+    "LEAVES",
+    "CRM",
+    "COMMERCIAL",
+    "PROJECTS",
+    "TICKETS",
+  ];
+  const standardActions = ["VIEW", "CREATE", "UPDATE", "DELETE"];
+  const permissions = permissionModules.flatMap((module) =>
+    standardActions.map((action) => ({
+      name: `${module}_${action}`,
+      module,
+      action,
+      description: `${action.toLowerCase()} access for ${module.toLowerCase()}`,
+    }))
+  );
+  permissions.push(
+    {
+      name: "ATTENDANCE_APPROVE",
+      module: "ATTENDANCE",
+      action: "APPROVE",
+      description: "Approve attendance correction requests",
+    },
+    {
+      name: "LEAVES_APPROVE",
+      module: "LEAVES",
+      action: "APPROVE",
+      description: "Approve or reject leave requests",
+    }
+  );
+
+  const rolePermissionRules = {
+    SUPER_ADMIN: () => true,
+    DIRECTOR: () => true,
+    OPERATIONS_MANAGER: (permission) =>
+      ["DEPARTMENTS", "TEAMS", "DESIGNATIONS", "EMPLOYEES", "ATTENDANCE", "LEAVES", "CRM", "COMMERCIAL", "PROJECTS", "TICKETS"].includes(permission.module),
+    HR: (permission) =>
+      ["DEPARTMENTS", "TEAMS", "DESIGNATIONS", "EMPLOYEES", "ATTENDANCE", "LEAVES"].includes(permission.module),
+    SALES_MANAGER: (permission) =>
+      ["CRM", "COMMERCIAL"].includes(permission.module) ||
+      (permission.module === "EMPLOYEES" && permission.action === "VIEW"),
+    TEAM_LEAD: (permission) =>
+      (["EMPLOYEES", "ATTENDANCE", "LEAVES", "CRM", "TICKETS"].includes(permission.module) &&
+        !["DELETE"].includes(permission.action)),
+    EMPLOYEE: (permission) =>
+      ["ATTENDANCE", "LEAVES", "TICKETS"].includes(permission.module) &&
+      ["VIEW", "CREATE"].includes(permission.action),
+    FREELANCER: (permission) =>
+      ["ATTENDANCE", "LEAVES"].includes(permission.module) &&
+      permission.action === "VIEW",
+    CLIENT: () => false,
+  };
+
   console.log("Seeding roles...");
 
   for (const role of roles) {
@@ -113,7 +174,39 @@ async function main() {
     });
   }
 
-  console.log("Default roles and departments seeded successfully.");
+  console.log("Seeding permissions...");
+
+  for (const permission of permissions) {
+    await prisma.permission.upsert({
+      where: { name: permission.name },
+      update: {
+        module: permission.module,
+        action: permission.action,
+        description: permission.description,
+      },
+      create: permission,
+    });
+  }
+
+  const savedRoles = await prisma.role.findMany();
+  const savedPermissions = await prisma.permission.findMany();
+
+  for (const role of savedRoles) {
+    const rule = rolePermissionRules[role.name] || (() => false);
+    const permissionIds = savedPermissions.filter(rule).map((item) => item.id);
+
+    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+    if (permissionIds.length) {
+      await prisma.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId: role.id,
+          permissionId,
+        })),
+      });
+    }
+  }
+
+  console.log("Default roles, permissions and departments seeded successfully.");
 }
 
 main()

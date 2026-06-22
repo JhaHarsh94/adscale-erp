@@ -14,6 +14,7 @@ import {
   X,
   CalendarCheck,
   CalendarDays
+  ,FileSignature
 } from "lucide-react";
 import { getUser, logout } from "../../lib/auth";
 
@@ -52,6 +53,11 @@ const navItems = [
     label: "CRM",
     path: "/crm",
     icon: BarChart3,
+  },
+  {
+    label: "Proposals & Quotes",
+    path: "/commercial",
+    icon: FileSignature,
   },
   {
     label: "Settings",

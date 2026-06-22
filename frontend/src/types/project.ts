@@ -1,0 +1,4 @@
+export interface ProjectMilestone { id:string; title:string; status:"PENDING"|"IN_PROGRESS"|"COMPLETED"|"BLOCKED"; dueDate?:string|null; }
+export interface ProjectMember { id:string; employeeId:string; role:string; allocation:number; employee:{ id:string; employeeCode:string; user:{name:string;email:string} }; }
+export interface Project { id:string; projectCode:string; name:string; description?:string|null; status:"PLANNING"|"ACTIVE"|"ON_HOLD"|"COMPLETED"|"CANCELLED"; priority:"LOW"|"MEDIUM"|"HIGH"|"URGENT"; health:"ON_TRACK"|"AT_RISK"|"OFF_TRACK"; progress:number; budget?:number|null; actualCost:number; startDate?:string|null; endDate?:string|null; client:{id:string;name:string}; manager?:{id:string;user:{name:string}}|null; members:ProjectMember[]; milestones:ProjectMilestone[]; }
+export interface ProjectDashboard { total:number; active:number; completed:number; atRisk:number; totalBudget:number; totalCost:number; }

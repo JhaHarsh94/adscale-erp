@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +22,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^9.0.1"
+    "nodemailer": "^9.0.1",
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -31,6 +32,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "@types/nodemailer": "^8.0.1",
+    "@types/pdfkit": "^0.17.6",
     "prisma": "^6.18.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.3"

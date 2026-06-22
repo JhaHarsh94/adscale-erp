@@ -13,6 +13,10 @@ import organizationRoutes from "./modules/organization/organization.routes";
 import employeeRoutes from "./modules/employees/employee.routes";
 import attendanceRoutes from "./modules/attendance/attendance.routes";
 import leaveRoutes from "./modules/leaves/leave.routes";
+import crmRoutes from "./modules/crm/crm.routes";
+import { permissionRoutes, roleRoutes } from "./modules/access/access.routes";
+import commercialRoutes from "./modules/commercial/commercial.routes";
+import projectRoutes from "./modules/projects/project.routes";
 
 dotenv.config();
 
@@ -66,6 +70,11 @@ app.use("/api/organization", organizationRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leaves", leaveRoutes);
+app.use("/api/crm", crmRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/permissions", permissionRoutes);
+app.use("/api/commercial", commercialRoutes);
+app.use("/api/projects", projectRoutes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {

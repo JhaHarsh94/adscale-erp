@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const reportingHierarchy_controller_1 = require("./reportingHierarchy.controller");
+const router = (0, express_1.Router)();
+router.get("/", auth_middleware_1.protect, reportingHierarchy_controller_1.getReportingHierarchy);
+router.get("/:id", auth_middleware_1.protect, reportingHierarchy_controller_1.getReportingHierarchyById);
+router.post("/", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR", "OPERATIONS_MANAGER"), reportingHierarchy_controller_1.createReportingHierarchy);
+router.put("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR", "OPERATIONS_MANAGER"), reportingHierarchy_controller_1.updateReportingHierarchy);
+router.delete("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR"), reportingHierarchy_controller_1.deleteReportingHierarchy);
+exports.default = router;

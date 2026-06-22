@@ -9,6 +9,26 @@ import { AuthRequest } from "../../middlewares/auth.middleware";
 import { generateOtp, getOtpExpiry } from "../../utils/otp";
 import { sendOtpEmail } from "../../utils/email";
 
+const roleWithPermissions = {
+  include: {
+    rolePermissions: {
+      include: { permission: true },
+    },
+  },
+};
+
+const serializeRole = (role: {
+  id: string;
+  name: string;
+  description: string | null;
+  rolePermissions: Array<{ permission: { name: string } }>;
+}) => ({
+  id: role.id,
+  name: role.name,
+  description: role.description,
+  permissions: role.rolePermissions.map((item) => item.permission.name),
+});
+
 export const register = asyncHandler(async (req, res: Response) => {
   const { name, email, phone, password, roleName } = req.body;
 
@@ -53,7 +73,7 @@ export const register = asyncHandler(async (req, res: Response) => {
       roleId: role.id,
     },
     include: {
-      role: true,
+      role: roleWithPermissions,
     },
   });
 
@@ -70,7 +90,7 @@ export const register = asyncHandler(async (req, res: Response) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      role: user.role.name,
+      role: serializeRole(user.role),
       status: user.status,
     },
   });
@@ -90,7 +110,7 @@ export const login = asyncHandler(async (req, res: Response) => {
       email: normalizedEmail,
     },
     include: {
-      role: true,
+      role: roleWithPermissions,
     },
   });
 
@@ -138,7 +158,7 @@ export const login = asyncHandler(async (req, res: Response) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      role: user.role.name,
+      role: serializeRole(user.role),
       status: user.status,
     },
   });
@@ -154,7 +174,7 @@ export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
       id: req.user.id,
     },
     include: {
-      role: true,
+      role: roleWithPermissions,
       employee: {
         include: {
           department: true,
@@ -172,7 +192,7 @@ export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
     name: user.name,
     email: user.email,
     phone: user.phone,
-    role: user.role.name,
+    role: serializeRole(user.role),
     status: user.status,
     employee: user.employee,
   });

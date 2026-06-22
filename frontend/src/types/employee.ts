@@ -64,6 +64,7 @@ export interface EmployeeSalaryDetail {
 }
 
 export interface EmployeeProfile extends Employee {
+  subordinates?: Employee[];
   documents: EmployeeDocument[];
   employeeSkills: EmployeeSkill[];
   salaryDetails: EmployeeSalaryDetail[];
