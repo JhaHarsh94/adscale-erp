@@ -23,40 +23,20 @@ function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function loadEmployeeId() {
-    const response = await apiClient.get("/employees");
-    const firstEmployee = response.data.data?.[0];
-
-    if (firstEmployee?.id) {
-      setEmployeeId(firstEmployee.id);
-      return firstEmployee.id;
-    }
-
-    return "";
-  }
-
-  async function loadToday(id?: string) {
-    const finalEmployeeId = id || employeeId;
-    if (!finalEmployeeId) return;
-
-    const response = await apiClient.get(
-      `/attendance/today?employeeId=${finalEmployeeId}`
-    );
-
-    setToday(response.data.data);
-  }
-
-  async function loadReport() {
-    const response = await apiClient.get("/attendance/report");
-    setReport(response.data.data || []);
-  }
-
   async function boot() {
     setLoading(true);
     try {
-      const id = await loadEmployeeId();
-      await loadToday(id);
-      await loadReport();
+      const me = await apiClient.get("/auth/me");
+      const empId = me.data.data?.employee?.id || "";
+      setEmployeeId(empId);
+      if (empId) {
+        const [todayRes, reportRes] = await Promise.all([
+          apiClient.get(`/attendance/today?employeeId=${empId}`),
+          apiClient.get("/attendance/report"),
+        ]);
+        setToday(todayRes.data.data);
+        setReport(reportRes.data.data || []);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,6 +46,14 @@ function AttendancePage() {
     boot();
   }, []);
 
+  async function refreshToday() {
+    if (!employeeId) return;
+    try { const res = await apiClient.get(`/attendance/today?employeeId=${employeeId}`); setToday(res.data.data); } catch {}
+  }
+  async function refreshReport() {
+    try { const res = await apiClient.get("/attendance/report"); setReport(res.data.data || []); } catch {}
+  }
+
   async function runAction(action: () => Promise<any>, successText: string) {
     setLoading(true);
     setMessage("");
@@ -73,8 +61,8 @@ function AttendancePage() {
     try {
       await action();
       setMessage(successText);
-      await loadToday();
-      await loadReport();
+      await refreshToday();
+      await refreshReport();
     } catch (err: any) {
       setMessage(err?.response?.data?.message || "Action failed");
     } finally {
@@ -141,8 +129,8 @@ function AttendancePage() {
           });
 
           setMessage("GPS check-in successful");
-          await loadToday();
-          await loadReport();
+          await refreshToday();
+          await refreshReport();
         } catch (err: any) {
           setMessage(err?.response?.data?.message || "GPS check-in failed");
         } finally {
@@ -318,7 +306,7 @@ function AttendancePage() {
           </label>
 
           <button
-            onClick={() => loadToday()}
+            onClick={() => refreshToday()}
             disabled={loading}
             className="mt-4 w-full rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white disabled:opacity-60"
           >

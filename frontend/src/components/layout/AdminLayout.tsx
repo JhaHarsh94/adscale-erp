@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Building2,
+  CheckSquare,
   FolderKanban,
   LayoutDashboard,
   Layers3,
@@ -17,6 +18,7 @@ import {
   ,FileSignature
 } from "lucide-react";
 import { getUser, logout } from "../../lib/auth";
+import NotificationBell from "./NotificationBell";
 
 const navItems = [
   {
@@ -45,6 +47,11 @@ const navItems = [
     icon: FolderKanban,
   },
   {
+    label: "Tasks",
+    path: "/tasks",
+    icon: CheckSquare,
+  },
+  {
     label: "Tickets",
     path: "/tickets",
     icon: Ticket,
@@ -58,6 +65,11 @@ const navItems = [
     label: "Proposals & Quotes",
     path: "/commercial",
     icon: FileSignature,
+  },
+  {
+    label: "Users",
+    path: "/users",
+    icon: UsersRound,
   },
   {
     label: "Settings",
@@ -187,8 +199,11 @@ function AdminLayout() {
               </div>
             </div>
 
-            <div className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm md:block">
-              {user?.name || "Admin"}
+            <div className="flex items-center gap-3">
+              <NotificationBell />
+              <div className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm md:block">
+                {user?.name || "Admin"}
+              </div>
             </div>
           </div>
         </header>

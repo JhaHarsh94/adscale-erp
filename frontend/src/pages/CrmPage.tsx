@@ -9,6 +9,7 @@ import {
   PlusCircle,
   RefreshCcw,
   Send,
+  Trash2,
   TrendingUp,
   UserRoundPlus,
   UsersRound,
@@ -329,6 +330,20 @@ function CrmPage() {
           outcome: "Completed from CRM workspace",
         }),
       "Follow-up completed"
+    );
+  }
+
+  function deleteLead(id: string) {
+    return runAction(
+      () => apiClient.delete(`/crm/leads/${id}`),
+      "Lead deleted successfully"
+    );
+  }
+
+  function deleteClient(id: string) {
+    return runAction(
+      () => apiClient.delete(`/crm/clients/${id}`),
+      "Client deleted successfully"
     );
   }
 
@@ -761,12 +776,20 @@ function CrmPage() {
                     </select>
                   </td>
                   <td className="py-4">
-                    <ActionButton
-                      onClick={() => convertLead(lead.id)}
-                      disabled={Boolean(lead.convertedClientId)}
-                    >
-                      Convert
-                    </ActionButton>
+                    <div className="flex items-center gap-2">
+                      <ActionButton
+                        onClick={() => convertLead(lead.id)}
+                        disabled={Boolean(lead.convertedClientId)}
+                      >
+                        Convert
+                      </ActionButton>
+                      <button
+                        onClick={() => deleteLead(lead.id)}
+                        className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -784,6 +807,7 @@ function CrmPage() {
                 <th className="py-3">Contact</th>
                 <th className="py-3">Contract</th>
                 <th className="py-3">Owner</th>
+                <th className="py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -809,9 +833,17 @@ function CrmPage() {
                   <td className="py-4 text-slate-600">
                     {client.accountOwner?.user?.name || "-"}
                   </td>
+                  <td className="py-4">
+                    <button
+                      onClick={() => deleteClient(client.id)}
+                      className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {!clients.length && <EmptyRow colSpan={5} text="No clients found." />}
+              {!clients.length && <EmptyRow colSpan={6} text="No clients found." />}
             </tbody>
           </table>
         </TablePanel>

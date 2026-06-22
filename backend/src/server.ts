@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
+import http from "http";
 import cors from "cors";
 import dotenv from "dotenv";
+import { Server } from "socket.io";
 import prisma from "./config/prisma";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import authRoutes from "./modules/auth/auth.routes";
@@ -17,13 +19,27 @@ import crmRoutes from "./modules/crm/crm.routes";
 import { permissionRoutes, roleRoutes } from "./modules/access/access.routes";
 import commercialRoutes from "./modules/commercial/commercial.routes";
 import projectRoutes from "./modules/projects/project.routes";
+import ticketRoutes from "./modules/tickets/ticket.routes";
+import taskRoutes from "./modules/tasks/task.routes";
+import notificationRoutes from "./modules/notifications/notification.routes";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] } });
 
 app.use(cors());
 app.use(express.json());
+
+/* Socket.IO - real-time notifications */
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId as string;
+  if (userId) socket.join(`user:${userId}`);
+  socket.on("disconnect", () => {});
+});
+
+export { io };
 
 const PORT = process.env.PORT || 5000;
 
@@ -75,8 +91,11 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/commercial", commercialRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use(errorMiddleware);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

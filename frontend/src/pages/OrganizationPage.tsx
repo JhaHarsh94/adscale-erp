@@ -7,6 +7,7 @@ import {
   PlusCircle,
   RefreshCcw,
   Send,
+  Trash2,
   UserPlus,
   UsersRound,
 } from "lucide-react";
@@ -163,6 +164,16 @@ function OrganizationPage({ defaultView }: { defaultView: OrganizationView }) {
         }),
       "Team member added successfully"
     );
+  }
+
+  function deleteDepartment(id: string) {
+    return runAction(() => apiClient.delete(`/departments/${id}`), "Department deleted");
+  }
+  function deleteDesignation(id: string) {
+    return runAction(() => apiClient.delete(`/designations/${id}`), "Designation deleted");
+  }
+  function deleteTeam(id: string) {
+    return runAction(() => apiClient.delete(`/teams/${id}`), "Team deleted");
   }
 
   const totalMembers = teams.reduce(
@@ -405,113 +416,125 @@ function OrganizationPage({ defaultView }: { defaultView: OrganizationView }) {
       {activeView === "departments" && (
         <TablePanel title="Departments">
           <table className="w-full min-w-[800px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Department</th>
-                <th className="py-3">Description</th>
-                <th className="py-3">Employees</th>
-              </tr>
-            </thead>
-            <tbody>
-              {departments.map((department) => (
-                <tr key={department.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">
-                    {department.name}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {department.description || "-"}
-                  </td>
-                  <td className="py-4 font-bold text-slate-700">
-                    {department._count?.employees ?? 0}
-                  </td>
+             <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                  <th className="py-3">Department</th>
+                  <th className="py-3">Description</th>
+                  <th className="py-3">Employees</th>
+                  <th className="py-3 w-20">Actions</th>
                 </tr>
-              ))}
-              {!departments.length && (
-                <EmptyRow colSpan={3} text="No departments found." />
-              )}
-            </tbody>
-          </table>
-        </TablePanel>
-      )}
-
-      {activeView === "designations" && (
-        <TablePanel title="Designations">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Designation</th>
-                <th className="py-3">Department</th>
-                <th className="py-3">Employees</th>
-                <th className="py-3">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {designations.map((designation) => (
-                <tr key={designation.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">
-                    {designation.name}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {designation.department?.name || "-"}
-                  </td>
-                  <td className="py-4 font-bold text-slate-700">
-                    {designation._count?.employees ?? 0}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {designation.description || "-"}
-                  </td>
-                </tr>
-              ))}
-              {!designations.length && (
-                <EmptyRow colSpan={4} text="No designations found." />
-              )}
-            </tbody>
-          </table>
-        </TablePanel>
-      )}
-
-      {activeView === "teams" && (
-        <TablePanel title="Teams">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Team</th>
-                <th className="py-3">Department</th>
-                <th className="py-3">Members</th>
-                <th className="py-3">Lead</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((team) => {
-                const lead = team.members?.find(
-                  (member) => member.role === "TEAM_LEAD"
-                );
-
-                return (
-                  <tr key={team.id} className="border-b border-slate-100">
+              </thead>
+              <tbody>
+                {departments.map((department) => (
+                  <tr key={department.id} className="border-b border-slate-100">
                     <td className="py-4 font-black text-slate-800">
-                      {team.name}
-                      <p className="mt-1 text-xs font-bold text-slate-400">
-                        {team.description || "No description"}
-                      </p>
+                      {department.name}
                     </td>
                     <td className="py-4 text-slate-600">
-                      {team.department?.name || "-"}
+                      {department.description || "-"}
                     </td>
                     <td className="py-4 font-bold text-slate-700">
-                      {team.members?.length || 0}
+                      {department._count?.employees ?? 0}
                     </td>
-                    <td className="py-4 text-slate-600">
-                      {lead?.employee?.user?.name || "-"}
+                    <td className="py-4">
+                      <button onClick={() => deleteDepartment(department.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
                     </td>
                   </tr>
-                );
-              })}
-              {!teams.length && <EmptyRow colSpan={4} text="No teams found." />}
-            </tbody>
-          </table>
-        </TablePanel>
-      )}
+                ))}
+                {!departments.length && (
+                  <EmptyRow colSpan={4} text="No departments found." />
+                )}
+              </tbody>
+            </table>
+          </TablePanel>
+        )}
+
+        {activeView === "designations" && (
+          <TablePanel title="Designations">
+            <table className="w-full min-w-[800px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                  <th className="py-3">Designation</th>
+                  <th className="py-3">Department</th>
+                  <th className="py-3">Employees</th>
+                  <th className="py-3">Description</th>
+                  <th className="py-3 w-20">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {designations.map((designation) => (
+                  <tr key={designation.id} className="border-b border-slate-100">
+                    <td className="py-4 font-black text-slate-800">
+                      {designation.name}
+                    </td>
+                    <td className="py-4 text-slate-600">
+                      {designation.department?.name || "-"}
+                    </td>
+                    <td className="py-4 font-bold text-slate-700">
+                      {designation._count?.employees ?? 0}
+                    </td>
+                    <td className="py-4 text-slate-600">
+                      {designation.description || "-"}
+                    </td>
+                    <td className="py-4">
+                      <button onClick={() => deleteDesignation(designation.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {!designations.length && (
+                  <EmptyRow colSpan={5} text="No designations found." />
+                )}
+              </tbody>
+            </table>
+          </TablePanel>
+        )}
+
+        {activeView === "teams" && (
+          <TablePanel title="Teams">
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                  <th className="py-3">Team</th>
+                  <th className="py-3">Department</th>
+                  <th className="py-3">Members</th>
+                  <th className="py-3">Lead</th>
+                  <th className="py-3 w-20">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teams.map((team) => {
+                  const lead = team.members?.find(
+                    (member) => member.role === "TEAM_LEAD"
+                  );
+
+                  return (
+                    <tr key={team.id} className="border-b border-slate-100">
+                      <td className="py-4 font-black text-slate-800">
+                        {team.name}
+                        <p className="mt-1 text-xs font-bold text-slate-400">
+                          {team.description || "No description"}
+                        </p>
+                      </td>
+                      <td className="py-4 text-slate-600">
+                        {team.department?.name || "-"}
+                      </td>
+                      <td className="py-4 font-bold text-slate-700">
+                        {team.members?.length || 0}
+                      </td>
+                      <td className="py-4 text-slate-600">
+                        {lead?.employee?.user?.name || "-"}
+                      </td>
+                      <td className="py-4">
+                        <button onClick={() => deleteTeam(team.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!teams.length && <EmptyRow colSpan={5} text="No teams found." />}
+              </tbody>
+            </table>
+          </TablePanel>
+        )}
 
       {activeView === "structure" && (
         <section className="grid gap-5 lg:grid-cols-2">

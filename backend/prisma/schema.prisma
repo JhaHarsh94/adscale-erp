@@ -246,6 +246,32 @@ enum TicketSlaEvent {
   RESUMED
 }
 
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskRecurrenceType {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
 model Role {
   id              String           @id @default(uuid())
   name            String           @unique
@@ -429,6 +455,12 @@ model User {
   ticketComments       TicketComment[]
   ticketAttachments    TicketAttachment[]
   ticketStatusChanges  TicketStatusLog[]    @relation("TicketStatusChangedBy")
+  createdTasks         Task[]               @relation("TaskCreatedBy")
+  taskComments         TaskComment[]
+  taskAttachments      TaskAttachment[]
+  taskStatusChanges    TaskStatusLog[]      @relation("TaskStatusChangedBy")
+  createdRecurringTasks RecurringTask[]     @relation("RecurringTaskCreatedBy")
+  notifications         Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -483,6 +515,8 @@ model Employee {
   managedProjects    Project[]       @relation("ProjectManager")
   projectMemberships ProjectMember[]
   assignedTickets    Ticket[]        @relation("TicketAssignedTo")
+  assignedTasks      Task[]          @relation("TaskAssignedTo")
+  assignedRecurringTasks RecurringTask[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -804,10 +838,12 @@ model Project {
   createdBy   User?     @relation("ProjectCreatedBy", fields: [createdById], references: [id])
 
   members    ProjectMember[]
-  milestones ProjectMilestone[]
-  timelines  ProjectTimeline[]
-  statusLogs ProjectStatusLog[]
-  tickets    Ticket[]
+  milestones    ProjectMilestone[]
+  timelines     ProjectTimeline[]
+  statusLogs    ProjectStatusLog[]
+  tickets       Ticket[]
+  tasks         Task[]
+  recurringTasks RecurringTask[]
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 
@@ -839,6 +875,7 @@ model ProjectMilestone {
   completedAt DateTime?
   sortOrder   Int                    @default(0)
   project     Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       Task[]
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
 
@@ -973,6 +1010,128 @@ model TicketStatusLog {
   createdAt   DateTime      @default(now())
 
   @@map("ticket_status_logs")
+}
+
+model Task {
+  id            String        @id @default(uuid())
+  taskNumber    String        @unique
+  title         String
+  description   String?
+  status        TaskStatus    @default(TODO)
+  priority      TaskPriority  @default(MEDIUM)
+  dueDate       DateTime?
+  estimatedHrs  Float?
+  actualHrs     Float?
+  sortOrder     Int           @default(0)
+
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id])
+  milestoneId   String?
+  milestone     ProjectMilestone? @relation(fields: [milestoneId], references: [id])
+  assignedToId  String?
+  assignedTo    Employee?     @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  createdById   String?
+  createdBy     User?         @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  parentId      String?
+  parent        Task?         @relation("TaskParent", fields: [parentId], references: [id])
+  subTasks      Task[]        @relation("TaskParent")
+
+  comments      TaskComment[]
+  attachments   TaskAttachment[]
+  dependencies  TaskDependency[]  @relation("TaskDependsOn")
+  dependentBy   TaskDependency[]  @relation("TaskDependedBy")
+  statusLogs    TaskStatusLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, priority])
+  @@index([assignedToId, status])
+  @@index([projectId])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id         String   @id @default(uuid())
+  taskId     String
+  authorId   String?
+  body       String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author     User?    @relation(fields: [authorId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id           String   @id @default(uuid())
+  taskId       String
+  uploadedById String?
+  name         String
+  fileUrl      String
+  fileType     String?
+  fileSize     Int?
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@map("task_attachments")
+}
+
+model TaskDependency {
+  id            String     @id @default(uuid())
+  taskId        String
+  dependsOnId   String
+  dependencyType String    @default("BLOCKS")
+  task          Task       @relation("TaskDependsOn", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn     Task       @relation("TaskDependedBy", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+
+  @@unique([taskId, dependsOnId])
+  @@map("task_dependencies")
+}
+
+model TaskStatusLog {
+  id          String      @id @default(uuid())
+  taskId      String
+  fromStatus  TaskStatus?
+  toStatus    TaskStatus
+  remarks     String?
+  changedById String?
+  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation("TaskStatusChangedBy", fields: [changedById], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@map("task_status_logs")
+}
+
+model RecurringTask {
+  id              String              @id @default(uuid())
+  title           String
+  description     String?
+  priority        TaskPriority        @default(MEDIUM)
+  recurrenceType  TaskRecurrenceType
+  intervalValue   Int?                @default(1)
+  customCron      String?
+  startDate       DateTime
+  endDate         DateTime?
+  nextOccurrence  DateTime
+  isActive        Boolean             @default(true)
+
+  projectId       String?
+  project         Project?            @relation(fields: [projectId], references: [id])
+  assignedToId    String?
+  assignedTo      Employee?           @relation(fields: [assignedToId], references: [id])
+  createdById     String?
+  createdBy       User?               @relation("RecurringTaskCreatedBy", fields: [createdById], references: [id])
+
+  lastGeneratedAt DateTime?
+  totalGenerated  Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@map("recurring_tasks")
 }
 
 model LoginHistory {
@@ -1210,6 +1369,23 @@ model DeviceSession {
   user User @relation(fields: [userId], references: [id])
 
   @@map("device_sessions")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  link      String?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }
 
 model OtpVerification {
