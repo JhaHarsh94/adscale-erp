@@ -414,127 +414,71 @@ function OrganizationPage({ defaultView }: { defaultView: OrganizationView }) {
       </section>
 
       {activeView === "departments" && (
-        <TablePanel title="Departments">
-          <table className="w-full min-w-[800px] text-left text-sm">
-             <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                  <th className="py-3">Department</th>
-                  <th className="py-3">Description</th>
-                  <th className="py-3">Employees</th>
-                  <th className="py-3 w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {departments.map((department) => (
-                  <tr key={department.id} className="border-b border-slate-100">
-                    <td className="py-4 font-black text-slate-800">
-                      {department.name}
-                    </td>
-                    <td className="py-4 text-slate-600">
-                      {department.description || "-"}
-                    </td>
-                    <td className="py-4 font-bold text-slate-700">
-                      {department._count?.employees ?? 0}
-                    </td>
-                    <td className="py-4">
-                      <button onClick={() => deleteDepartment(department.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
-                    </td>
-                  </tr>
-                ))}
-                {!departments.length && (
-                  <EmptyRow colSpan={4} text="No departments found." />
-                )}
-              </tbody>
-            </table>
-          </TablePanel>
-        )}
+        <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Departments</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {departments.length === 0 && <p className="py-4 text-center text-sm font-bold text-slate-400">No departments found.</p>}
+            {departments.map((department) => (
+              <div key={department.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 truncate">{department.name}</p>
+                  <p className="text-xs text-slate-500 truncate">{department.description || "—"}</p>
+                  <p className="mt-1 text-xs font-bold text-slate-600">{department._count?.employees ?? 0} employees</p>
+                </div>
+                <button onClick={() => deleteDepartment(department.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600 shrink-0"><Trash2 size={15} /></button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-        {activeView === "designations" && (
-          <TablePanel title="Designations">
-            <table className="w-full min-w-[800px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                  <th className="py-3">Designation</th>
-                  <th className="py-3">Department</th>
-                  <th className="py-3">Employees</th>
-                  <th className="py-3">Description</th>
-                  <th className="py-3 w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {designations.map((designation) => (
-                  <tr key={designation.id} className="border-b border-slate-100">
-                    <td className="py-4 font-black text-slate-800">
-                      {designation.name}
-                    </td>
-                    <td className="py-4 text-slate-600">
-                      {designation.department?.name || "-"}
-                    </td>
-                    <td className="py-4 font-bold text-slate-700">
-                      {designation._count?.employees ?? 0}
-                    </td>
-                    <td className="py-4 text-slate-600">
-                      {designation.description || "-"}
-                    </td>
-                    <td className="py-4">
-                      <button onClick={() => deleteDesignation(designation.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
-                    </td>
-                  </tr>
-                ))}
-                {!designations.length && (
-                  <EmptyRow colSpan={5} text="No designations found." />
-                )}
-              </tbody>
-            </table>
-          </TablePanel>
-        )}
+      {activeView === "designations" && (
+        <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Designations</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {designations.length === 0 && <p className="py-4 text-center text-sm font-bold text-slate-400">No designations found.</p>}
+            {designations.map((designation) => (
+              <div key={designation.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-900 truncate">{designation.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Dept: {designation.department?.name || "—"}</p>
+                    <p className="text-xs text-slate-500 truncate">{designation.description || "—"}</p>
+                    <p className="mt-1 text-xs font-bold text-slate-600">{designation._count?.employees ?? 0} employees</p>
+                  </div>
+                  <button onClick={() => deleteDesignation(designation.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600 shrink-0"><Trash2 size={15} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-        {activeView === "teams" && (
-          <TablePanel title="Teams">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                  <th className="py-3">Team</th>
-                  <th className="py-3">Department</th>
-                  <th className="py-3">Members</th>
-                  <th className="py-3">Lead</th>
-                  <th className="py-3 w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teams.map((team) => {
-                  const lead = team.members?.find(
-                    (member) => member.role === "TEAM_LEAD"
-                  );
-
-                  return (
-                    <tr key={team.id} className="border-b border-slate-100">
-                      <td className="py-4 font-black text-slate-800">
-                        {team.name}
-                        <p className="mt-1 text-xs font-bold text-slate-400">
-                          {team.description || "No description"}
-                        </p>
-                      </td>
-                      <td className="py-4 text-slate-600">
-                        {team.department?.name || "-"}
-                      </td>
-                      <td className="py-4 font-bold text-slate-700">
-                        {team.members?.length || 0}
-                      </td>
-                      <td className="py-4 text-slate-600">
-                        {lead?.employee?.user?.name || "-"}
-                      </td>
-                      <td className="py-4">
-                        <button onClick={() => deleteTeam(team.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!teams.length && <EmptyRow colSpan={5} text="No teams found." />}
-              </tbody>
-            </table>
-          </TablePanel>
-        )}
+      {activeView === "teams" && (
+        <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Teams</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {teams.length === 0 && <p className="py-4 text-center text-sm font-bold text-slate-400">No teams found.</p>}
+            {teams.map((team) => {
+              const lead = team.members?.find((m) => m.role === "TEAM_LEAD");
+              return (
+                <div key={team.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-900 truncate">{team.name}</p>
+                      <p className="text-xs text-slate-500 truncate">{team.description || "—"}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">Dept: {team.department?.name || "—"}</p>
+                      <p className="text-xs font-bold text-slate-600">{team.members?.length || 0} members</p>
+                      {lead && <p className="text-xs font-bold text-blue-600">Lead: {lead.employee?.user?.name}</p>}
+                    </div>
+                    <button onClick={() => deleteTeam(team.id)} className="rounded-xl border p-2 text-red-400 hover:bg-red-50 hover:text-red-600 shrink-0"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {activeView === "structure" && (
         <section className="grid gap-5 lg:grid-cols-2">
@@ -693,28 +637,6 @@ function PrimaryButton({
     >
       {children}
     </button>
-  );
-}
-
-function TablePanel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black text-slate-950">{title}</h2>
-      <div className="mt-5 overflow-x-auto">{children}</div>
-    </div>
-  );
-}
-
-function EmptyRow({ colSpan, text }: { colSpan: number; text: string }) {
-  return (
-    <tr>
-      <td
-        colSpan={colSpan}
-        className="py-8 text-center text-sm font-bold text-slate-500"
-      >
-        {text}
-      </td>
-    </tr>
   );
 }
 

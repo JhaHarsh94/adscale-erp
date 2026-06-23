@@ -15,6 +15,11 @@ import CommercialReviewPage from "./pages/CommercialReviewPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import TicketsPage from "./pages/TicketsPage";
 import TasksPage from "./pages/TasksPage";
+import WorkLogsPage from "./pages/WorkLogsPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
+import FilesPage from "./pages/FilesPage";
+import ChatPage from "./pages/ChatPage";
+import MeetingsPage from "./pages/MeetingsPage";
 import UsersPage from "./pages/UsersPage";
 import SetupPage from "./pages/SetupPage";
 
@@ -47,6 +52,11 @@ function App() {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/tickets" element={<TicketsPage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/worklogs" element={<WorkLogsPage />} />
+          <Route path="/approvals" element={<ApprovalsPage />} />
+          <Route path="/files" element={<FilesPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/meetings" element={<MeetingsPage />} />
           <Route path="/users" element={<UsersPage />} />
           </Route>
         </Route>

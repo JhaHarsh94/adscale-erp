@@ -460,110 +460,49 @@ function LeaveManagementPage() {
         </Panel>
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-black text-slate-950">Leave Requests</h2>
+      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+        <h2 className="text-lg md:text-xl font-black text-slate-950">Leave Requests</h2>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Employee</th>
-                <th className="py-3">Leave Type</th>
-                <th className="py-3">Dates</th>
-                <th className="py-3">Days</th>
-                <th className="py-3">Status</th>
-                <th className="py-3">Reason</th>
-                <th className="py-3">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {leaveRequests.map((request) => (
-                <tr key={request.id} className="border-b border-slate-100">
-                  <td className="py-4 font-bold text-slate-700">
-                    {request.employee?.user?.name || request.employeeId}
-                  </td>
-
-                  <td className="py-4 font-bold text-slate-700">
-                    {request.leaveType?.name || request.leaveTypeId}
-                  </td>
-
-                  <td className="py-4 text-slate-600">
-                    {new Date(request.startDate).toLocaleDateString()} -{" "}
-                    {new Date(request.endDate).toLocaleDateString()}
-                  </td>
-
-                  <td className="py-4 font-bold text-slate-700">
-                    {request.totalDays}
-                  </td>
-
-                  <td className="py-4">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
-                      {request.status}
-                    </span>
-                  </td>
-
-                  <td className="py-4 text-slate-600">
-                    {request.reason || "-"}
-                  </td>
-
-                  <td className="py-4">
-                    <div className="flex flex-wrap gap-2">
-                      {request.status === "PENDING" && (
-                        <>
-                          <ActionButton
-                            label="TL Approve"
-                            onClick={() => teamLeadApprove(request.id)}
-                          />
-
-                          <ActionButton
-                            label="TL Reject"
-                            danger
-                            onClick={() => teamLeadReject(request.id)}
-                          />
-                        </>
-                      )}
-
-                      {request.status === "TEAM_LEAD_APPROVED" && (
-                        <>
-                          <ActionButton
-                            label="HR Approve"
-                            onClick={() => hrApprove(request.id)}
-                          />
-
-                          <ActionButton
-                            label="HR Reject"
-                            danger
-                            onClick={() => hrReject(request.id)}
-                          />
-                        </>
-                      )}
-
-                      {(request.status === "PENDING" ||
-                        request.status === "TEAM_LEAD_APPROVED") && (
-                        <ActionButton
-                          label="Cancel"
-                          dark
-                          onClick={() => cancelLeave(request.id)}
-                        />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {!leaveRequests.length && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-8 text-center text-sm font-bold text-slate-500"
-                  >
-                    No leave requests found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mt-4 md:mt-5 grid gap-3">
+          {leaveRequests.length === 0 && <p className="py-6 text-center text-sm font-bold text-slate-400">No leave requests found.</p>}
+          {leaveRequests.map((request) => (
+            <div key={request.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">
+                    {request.employee?.user?.name?.charAt(0) || "E"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">{request.employee?.user?.name || request.employeeId}</p>
+                    <p className="text-xs text-slate-500">{request.leaveType?.name || request.leaveTypeId}</p>
+                  </div>
+                </div>
+                <div className="mt-3 md:mt-0 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-black text-blue-700">{request.status}</span>
+                  <span className="text-xs font-bold text-slate-500">{new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}</span>
+                  <span className="text-xs font-bold text-slate-700">{request.totalDays} day(s)</span>
+                </div>
+              </div>
+              {request.reason && <p className="mt-2 text-xs text-slate-500">Reason: {request.reason}</p>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {request.status === "PENDING" && (
+                  <>
+                    <ActionButton label="TL Approve" onClick={() => teamLeadApprove(request.id)} />
+                    <ActionButton label="TL Reject" danger onClick={() => teamLeadReject(request.id)} />
+                  </>
+                )}
+                {request.status === "TEAM_LEAD_APPROVED" && (
+                  <>
+                    <ActionButton label="HR Approve" onClick={() => hrApprove(request.id)} />
+                    <ActionButton label="HR Reject" danger onClick={() => hrReject(request.id)} />
+                  </>
+                )}
+                {(request.status === "PENDING" || request.status === "TEAM_LEAD_APPROVED") && (
+                  <ActionButton label="Cancel" dark onClick={() => cancelLeave(request.id)} />
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

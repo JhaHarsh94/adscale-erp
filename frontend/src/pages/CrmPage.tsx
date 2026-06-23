@@ -735,208 +735,108 @@ function CrmPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <TablePanel title="Leads">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Company</th>
-                <th className="py-3">Contact</th>
-                <th className="py-3">Source</th>
-                <th className="py-3">Value</th>
-                <th className="py-3">Status</th>
-                <th className="py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">
-                    {lead.companyName}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {lead.contactName || lead.email || "-"}
-                  </td>
-                  <td className="py-4 text-slate-600">{lead.source}</td>
-                  <td className="py-4 font-bold text-slate-700">
-                    {formatMoney(lead.estimatedValue)}
-                  </td>
-                  <td className="py-4">
-                    <select
-                      value={lead.status}
-                      onChange={(event) =>
-                        updateLeadStatus(lead.id, event.target.value)
-                      }
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700"
-                    >
-                      {leadStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-4">
-                    <div className="flex items-center gap-2">
-                      <ActionButton
-                        onClick={() => convertLead(lead.id)}
-                        disabled={Boolean(lead.convertedClientId)}
-                      >
-                        Convert
-                      </ActionButton>
-                      <button
-                        onClick={() => deleteLead(lead.id)}
-                        className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Leads</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {leads.length === 0 && <p className="py-6 text-center text-sm font-bold text-slate-400">No leads found.</p>}
+            {leads.map((lead) => (
+              <div key={lead.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">{lead.companyName.charAt(0)}</div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-900 truncate">{lead.companyName}</p>
+                      <p className="text-xs text-slate-500 truncate">{lead.contactName || lead.email || "—"}</p>
+                      <p className="text-xs text-slate-500">Source: {lead.source}</p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {!leads.length && <EmptyRow colSpan={6} text="No leads found." />}
-            </tbody>
-          </table>
-        </TablePanel>
+                  </div>
+                  <div className="mt-3 md:mt-0 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700">{formatMoney(lead.estimatedValue)}</span>
+                    <select value={lead.status} onChange={(e) => updateLeadStatus(lead.id, e.target.value)} className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-black text-slate-700">
+                      {leadStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <ActionButton onClick={() => convertLead(lead.id)} disabled={Boolean(lead.convertedClientId)}>Convert</ActionButton>
+                    <button onClick={() => deleteLead(lead.id)} className="rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <TablePanel title="Clients">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Client</th>
-                <th className="py-3">Status</th>
-                <th className="py-3">Contact</th>
-                <th className="py-3">Contract</th>
-                <th className="py-3">Owner</th>
-                <th className="py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client) => (
-                <tr key={client.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">
-                    {client.name}
-                    <p className="mt-1 text-xs font-bold text-slate-400">
-                      {client.industry || client.source}
-                    </p>
-                  </td>
-                  <td className="py-4">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
-                      {client.status}
-                    </span>
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {client.contacts?.[0]?.name || client.email || "-"}
-                  </td>
-                  <td className="py-4 font-bold text-slate-700">
-                    {formatMoney(client.contractValue)}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {client.accountOwner?.user?.name || "-"}
-                  </td>
-                  <td className="py-4">
-                    <button
-                      onClick={() => deleteClient(client.id)}
-                      className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {!clients.length && <EmptyRow colSpan={6} text="No clients found." />}
-            </tbody>
-          </table>
-        </TablePanel>
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Clients</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {clients.length === 0 && <p className="py-6 text-center text-sm font-bold text-slate-400">No clients found.</p>}
+            {clients.map((client) => (
+              <div key={client.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-600 text-sm font-black text-white">{client.name.charAt(0)}</div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-900 truncate">{client.name}</p>
+                      <p className="text-xs text-slate-500 truncate">{client.industry || client.source}</p>
+                      <p className="text-xs text-slate-500">{client.contacts?.[0]?.name || client.email || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 md:mt-0 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-black text-blue-700">{client.status}</span>
+                    <span className="text-xs font-bold text-slate-700">{formatMoney(client.contractValue)}</span>
+                    <span className="text-xs text-slate-500">{client.accountOwner?.user?.name || "—"}</span>
+                    <button onClick={() => deleteClient(client.id)} className="rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <TablePanel title="Follow-ups">
-          <table className="w-full min-w-[850px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Subject</th>
-                <th className="py-3">Linked To</th>
-                <th className="py-3">Scheduled</th>
-                <th className="py-3">Status</th>
-                <th className="py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {followUps.map((followUp) => (
-                <tr key={followUp.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">
-                    {followUp.subject}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {followUp.lead?.companyName || followUp.client?.name || "-"}
-                  </td>
-                  <td className="py-4 text-slate-600">
-                    {new Date(followUp.scheduledAt).toLocaleString()}
-                  </td>
-                  <td className="py-4">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
-                      {followUp.status}
-                    </span>
-                  </td>
-                  <td className="py-4">
-                    {followUp.status === "PENDING" && (
-                      <ActionButton onClick={() => completeFollowUp(followUp.id)}>
-                        Done
-                      </ActionButton>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!followUps.length && (
-                <EmptyRow colSpan={5} text="No follow-ups found." />
-              )}
-            </tbody>
-          </table>
-        </TablePanel>
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Follow-ups</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {followUps.length === 0 && <p className="py-6 text-center text-sm font-bold text-slate-400">No follow-ups found.</p>}
+            {followUps.map((followUp) => (
+              <div key={followUp.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-slate-900">{followUp.subject}</p>
+                    <p className="text-xs text-slate-500">{followUp.lead?.companyName || followUp.client?.name || "—"}</p>
+                  </div>
+                  <div className="mt-3 md:mt-0 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-500">{new Date(followUp.scheduledAt).toLocaleString()}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-700">{followUp.status}</span>
+                    {followUp.status === "PENDING" && <ActionButton onClick={() => completeFollowUp(followUp.id)}>Done</ActionButton>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <TablePanel title="Sales Pipeline">
-          <table className="w-full min-w-[850px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-                <th className="py-3">Deal</th>
-                <th className="py-3">Linked To</th>
-                <th className="py-3">Amount</th>
-                <th className="py-3">Stage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pipeline.map((item) => (
-                <tr key={item.id} className="border-b border-slate-100">
-                  <td className="py-4 font-black text-slate-800">{item.name}</td>
-                  <td className="py-4 text-slate-600">
-                    {item.lead?.companyName || item.client?.name || "-"}
-                  </td>
-                  <td className="py-4 font-bold text-slate-700">
-                    {formatMoney(item.amount)}
-                  </td>
-                  <td className="py-4">
-                    <select
-                      value={item.stage}
-                      onChange={(event) =>
-                        updatePipelineStage(item.id, event.target.value)
-                      }
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700"
-                    >
-                      {pipelineStages.map((stage) => (
-                        <option key={stage} value={stage}>
-                          {stage}
-                        </option>
-                      ))}
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h2 className="text-lg md:text-xl font-black text-slate-950">Sales Pipeline</h2>
+          <div className="mt-4 md:mt-5 grid gap-3">
+            {pipeline.length === 0 && <p className="py-6 text-center text-sm font-bold text-slate-400">No pipeline items found.</p>}
+            {pipeline.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-slate-900">{item.name}</p>
+                    <p className="text-xs text-slate-500">{item.lead?.companyName || item.client?.name || "—"}</p>
+                  </div>
+                  <div className="mt-3 md:mt-0 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700">{formatMoney(item.amount)}</span>
+                    <select value={item.stage} onChange={(e) => updatePipelineStage(item.id, e.target.value)} className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-black text-slate-700">
+                      {pipelineStages.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
-                  </td>
-                </tr>
-              ))}
-              {!pipeline.length && (
-                <EmptyRow colSpan={4} text="No pipeline items found." />
-              )}
-            </tbody>
-          </table>
-        </TablePanel>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {loading && (
@@ -1000,15 +900,6 @@ function Panel({
         <h2 className="text-xl font-black text-slate-950">{title}</h2>
       </div>
       {children}
-    </div>
-  );
-}
-
-function TablePanel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black text-slate-950">{title}</h2>
-      <div className="mt-5 overflow-x-auto">{children}</div>
     </div>
   );
 }
@@ -1102,19 +993,6 @@ function TargetSelect({
         ))}
       </select>
     </Field>
-  );
-}
-
-function EmptyRow({ colSpan, text }: { colSpan: number; text: string }) {
-  return (
-    <tr>
-      <td
-        colSpan={colSpan}
-        className="py-8 text-center text-sm font-bold text-slate-500"
-      >
-        {text}
-      </td>
-    </tr>
   );
 }
 

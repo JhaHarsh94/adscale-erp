@@ -86,23 +86,25 @@ export default function UsersPage() {
         <button onClick={createUser} className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-black text-white">Create User</button>
       </div>}
 
-      <div className="mt-5 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
-            <th className="py-3">Name</th><th className="py-3">Email</th><th className="py-3">Role</th><th className="py-3">Status</th><th className="py-3">Employee</th><th className="py-3">Created</th>
-          </tr></thead>
-          <tbody>
-            {users.map((user) => <tr key={user.id} className="border-b border-slate-100">
-              <td className="py-4 font-black text-slate-800">{user.name}</td>
-              <td className="py-4 text-slate-600">{user.email}</td>
-              <td className="py-4"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">{user.role.name}</span></td>
-              <td className="py-4"><span className={`rounded-full px-3 py-1 text-xs font-black ${user.status === "ACTIVE" ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}>{user.status}</span></td>
-              <td className="py-4 text-slate-600">{user.employee?.employeeCode || "-"}</td>
-              <td className="py-4 text-slate-400 text-xs">{new Date(user.createdAt).toLocaleDateString()}</td>
-            </tr>)}
-            {users.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-sm font-bold text-slate-400">No users found</td></tr>}
-          </tbody>
-        </table>
+      <div className="mt-5 grid gap-3">
+        {users.length === 0 && <p className="py-8 text-center text-sm font-bold text-slate-400">No users found</p>}
+        {users.map((user) => (
+          <div key={user.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4 md:flex md:items-center md:justify-between md:gap-4">
+            <div className="flex items-start gap-3 md:min-w-0 md:flex-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">{user.name.charAt(0)}</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-slate-900 truncate">{user.name}</p>
+                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-0 md:gap-3">
+              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-black text-blue-700">{user.role.name}</span>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${user.status === "ACTIVE" ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}>{user.status}</span>
+              {user.employee?.employeeCode && <span className="text-xs font-bold text-slate-500">Code: {user.employee.employeeCode}</span>}
+              <span className="text-xs text-slate-400">{new Date(user.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   </div>;
