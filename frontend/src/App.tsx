@@ -21,6 +21,7 @@ import FilesPage from "./pages/FilesPage";
 import ChatPage from "./pages/ChatPage";
 import MeetingsPage from "./pages/MeetingsPage";
 import MeetingManagementPage from "./pages/MeetingManagementPage";
+import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import UsersPage from "./pages/UsersPage";
 import SetupPage from "./pages/SetupPage";
 
@@ -59,6 +60,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/meetings" element={<MeetingsPage />} />
           <Route path="/meeting-management" element={<MeetingManagementPage />} />
+          <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
           <Route path="/users" element={<UsersPage />} />
           </Route>
         </Route>

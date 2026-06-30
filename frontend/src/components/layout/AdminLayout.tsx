@@ -17,6 +17,7 @@ import {
   UsersRound,
   Video,
   ClipboardList,
+  BookOpen,
   X,
   CalendarCheck,
   CalendarDays
@@ -38,6 +39,7 @@ const navItems: { label: string; path: string; icon: any; roles: string[] }[] = 
   { label: "Chat", path: "/chat", icon: MessageCircle, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
   { label: "Meetings", path: "/meetings", icon: Video, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
   { label: "Meeting Mgmt", path: "/meeting-management", icon: ClipboardList, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
+  { label: "Knowledge Base", path: "/knowledge-base", icon: BookOpen, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
   { label: "Tickets", path: "/tickets", icon: Ticket, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
   { label: "CRM", path: "/crm", icon: BarChart3, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER", "HR"] },
   { label: "Proposals & Quotes", path: "/commercial", icon: FileSignature, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER"] },

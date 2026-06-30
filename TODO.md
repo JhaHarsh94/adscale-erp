@@ -29,7 +29,7 @@
 - [x] Phase 14 - Internal Chat System (Slack-style, Socket.IO)
 - [x] Phase 15 - Video Conferencing (Jitsi Meet integration)
 - [x] Phase 16 - Meeting Management (agenda, MOM, action items)
-- [ ] Phase 17 - Knowledge Base (SOPs, training, HR policies)
+- [x] Phase 17 - Knowledge Base (SOPs, training, HR policies)
 - [ ] Phase 18 - HRMS (performance, appraisals, promotions)
 - [ ] Phase 19 - Payroll (salary, deductions, payslips)
 - [ ] Phase 20 - Recruitment Module (job openings, applicants)

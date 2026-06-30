@@ -478,6 +478,8 @@ model User {
   meetingRecordings     MeetingRecording[] @relation("RecordingCreatedBy")
   formalMeetingsCreated FormalMeeting[]    @relation("FormalMeetingCreatedBy")
   minutesCreated        MeetingMinutes[]   @relation("MinutesCreatedBy")
+  knowledgeArticles     KnowledgeArticle[] @relation("KnowledgeArticleCreatedBy")
+  knowledgeViews        KnowledgeView[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1964,4 +1966,79 @@ model OtpVerification {
   user User? @relation(fields: [userId], references: [id])
 
   @@map("otp_verifications")
+}
+
+model KnowledgeCategory {
+  id          String              @id @default(uuid())
+  name        String              @unique
+  description String?
+  icon        String?
+  sortOrder   Int                 @default(0)
+  isActive    Boolean             @default(true)
+  parentId    String?
+  parent      KnowledgeCategory?  @relation("KnowledgeCategoryParent", fields: [parentId], references: [id])
+  children    KnowledgeCategory[] @relation("KnowledgeCategoryParent")
+  articles    KnowledgeArticle[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([parentId])
+  @@map("knowledge_categories")
+}
+
+enum KnowledgeArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model KnowledgeArticle {
+  id           String                 @id @default(uuid())
+  title        String
+  content      String?
+  status       KnowledgeArticleStatus @default(DRAFT)
+  categoryId   String?
+  category     KnowledgeCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags         String?
+  createdById  String?
+  createdBy    User?                  @relation("KnowledgeArticleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  publishedAt  DateTime?
+  files        KnowledgeFile[]
+  views        KnowledgeView[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([createdById])
+  @@map("knowledge_articles")
+}
+
+model KnowledgeFile {
+  id          String           @id @default(uuid())
+  articleId   String
+  name        String
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  isVideo     Boolean          @default(false)
+  sortOrder   Int              @default(0)
+  article     KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+
+  @@index([articleId])
+  @@map("knowledge_files")
+}
+
+model KnowledgeView {
+  id        String           @id @default(uuid())
+  articleId String
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  article   KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([articleId])
+  @@index([userId])
+  @@map("knowledge_views")
 }
