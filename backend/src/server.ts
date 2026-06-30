@@ -31,6 +31,7 @@ import approvalRoutes from "./modules/approvals/approval.routes";
 import fileRoutes from "./modules/files/file.routes";
 import chatRoutes from "./modules/chat/chat.routes";
 import meetingRoutes from "./modules/meetings/meeting.routes";
+import meetingManagementRoutes from "./modules/meetingManagement/meetingManagement.routes";
 
 dotenv.config();
 
@@ -167,6 +168,7 @@ app.use("/api/approvals", approvalRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/meetings", meetingRoutes);
+app.use("/api/meeting-management", meetingManagementRoutes);
 app.use(errorMiddleware);
 
 server.listen(PORT, () => {

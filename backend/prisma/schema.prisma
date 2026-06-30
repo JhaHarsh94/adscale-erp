@@ -476,6 +476,8 @@ model User {
   meetingsCreated       VideoMeeting[]     @relation("MeetingCreatedBy")
   meetingParticipations MeetingParticipant[]
   meetingRecordings     MeetingRecording[] @relation("RecordingCreatedBy")
+  formalMeetingsCreated FormalMeeting[]    @relation("FormalMeetingCreatedBy")
+  minutesCreated        MeetingMinutes[]   @relation("MinutesCreatedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -535,6 +537,8 @@ model Employee {
   workLogs               WorkLog[]
   dailyReports           DailyReport[]
   approvalSteps          ApprovalStep[]
+  meetingAttendance      MeetingAttendance[]
+  assignedActionItems    MeetingActionItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1736,6 +1740,118 @@ model MeetingRecording {
   createdAt DateTime @default(now())
 
   @@map("meeting_recordings")
+}
+
+enum FormalMeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ActionItemStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model FormalMeeting {
+  id          String              @id @default(uuid())
+  title       String
+  description String?
+  meetingDate DateTime
+  startTime   DateTime?
+  endTime     DateTime?
+  location    String?
+  status      FormalMeetingStatus @default(SCHEDULED)
+
+  createdById String?
+  createdBy   User?               @relation("FormalMeetingCreatedBy", fields: [createdById], references: [id])
+
+  agendaItems MeetingAgenda[]
+  attendance  MeetingAttendance[]
+  minutes     MeetingMinutes?
+  actionItems MeetingActionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([meetingDate])
+  @@index([status])
+  @@index([createdById])
+  @@map("formal_meetings")
+}
+
+model MeetingAgenda {
+  id          String   @id @default(uuid())
+  meetingId   String
+  title       String
+  description String?
+  sortOrder   Int      @default(0)
+  durationMins Int?
+
+  meeting FormalMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([meetingId, sortOrder])
+  @@map("meeting_agendas")
+}
+
+model MeetingAttendance {
+  id         String   @id @default(uuid())
+  meetingId  String
+  employeeId String
+  attended   Boolean  @default(false)
+  joinedAt   DateTime?
+  leftAt     DateTime?
+  notes      String?
+
+  meeting  FormalMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  employee Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, employeeId])
+  @@map("meeting_attendance")
+}
+
+model MeetingMinutes {
+  id          String   @id @default(uuid())
+  meetingId   String   @unique
+  content     String
+  createdById String?
+  createdBy   User?    @relation("MinutesCreatedBy", fields: [createdById], references: [id])
+
+  meeting FormalMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("meeting_minutes")
+}
+
+model MeetingActionItem {
+  id            String           @id @default(uuid())
+  meetingId     String
+  description   String
+  assignedToId  String?
+  assignedTo    Employee?        @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  dueDate       DateTime?
+  status        ActionItemStatus @default(PENDING)
+  completedAt   DateTime?
+  notes         String?
+  sortOrder     Int              @default(0)
+
+  meeting FormalMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([meetingId])
+  @@index([assignedToId])
+  @@index([status])
+  @@map("meeting_action_items")
 }
 
 enum ApprovalStepStatus {
