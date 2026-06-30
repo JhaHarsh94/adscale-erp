@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const task_controller_1 = require("./task.controller");
+const router = (0, express_1.Router)();
+const taskReadRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "TEAM_LEAD", "HR", "EMPLOYEE", "SALES_MANAGER"];
+const taskWriteRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "TEAM_LEAD", "SALES_MANAGER"];
+const taskAdminRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER"];
+router.get("/dashboard", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskReadRoles), task_controller_1.dashboard);
+router.get("/kanban", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskReadRoles), task_controller_1.kanban);
+router.get("/", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskReadRoles), task_controller_1.list);
+router.post("/", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.create);
+router.get("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskReadRoles), task_controller_1.getOne);
+router.put("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.update);
+router.delete("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskAdminRoles), task_controller_1.remove);
+router.post("/:id/status", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.changeStatus);
+router.post("/reorder", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.reorder);
+router.post("/:id/dependencies", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.addDependency);
+router.delete("/:id/dependencies/:depId", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.removeDependency);
+router.get("/:id/comments", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskReadRoles), task_controller_1.commentsList);
+router.post("/:id/comments", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskWriteRoles), task_controller_1.commentsCreate);
+/* Recurring */
+router.get("/recurring/list", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskAdminRoles), task_controller_1.recurringList);
+router.post("/recurring", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskAdminRoles), task_controller_1.recurringCreate);
+router.delete("/recurring/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...taskAdminRoles), task_controller_1.recurringDelete);
+exports.default = router;

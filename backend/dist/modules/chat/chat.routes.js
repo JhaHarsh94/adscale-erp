@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const chat_controller_1 = require("./chat.controller");
+const router = (0, express_1.Router)();
+const readRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "TEAM_LEAD", "HR", "EMPLOYEE", "SALES_MANAGER"];
+router.get("/rooms", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.listRooms);
+router.get("/rooms/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.getRoom);
+router.post("/rooms/direct", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.createDirectRoom);
+router.post("/rooms/group", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.createGroupRoom);
+router.get("/rooms/:id/messages", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.listMessages);
+router.post("/rooms/:id/messages", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.sendMessage);
+router.post("/rooms/:id/read", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.markRead);
+router.get("/unread", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.getUnreadCount);
+router.get("/users", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...readRoles), chat_controller_1.listChatUsers);
+exports.default = router;

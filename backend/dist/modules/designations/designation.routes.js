@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const designation_controller_1 = require("./designation.controller");
+const router = (0, express_1.Router)();
+router.get("/", auth_middleware_1.protect, designation_controller_1.getDesignations);
+router.get("/:id", auth_middleware_1.protect, designation_controller_1.getDesignationById);
+router.post("/", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR"), designation_controller_1.createDesignation);
+router.put("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR", "HR"), designation_controller_1.updateDesignation);
+router.delete("/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)("SUPER_ADMIN", "DIRECTOR"), designation_controller_1.deleteDesignation);
+exports.default = router;
