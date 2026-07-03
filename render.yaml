@@ -24,3 +24,5 @@ services:
         value: e55e626188e0a3c51d7477cf20589d23bfeadde95d92a2d4e0290054a798a44f
       - key: ALLOWED_ORIGINS
         value: https://frontend-fawn-ten-72.vercel.app
+      - key: SHEET_ID
+        value: 1vAankCZMlz64zNa-rXaoHxdshmvhkJza1ubz-i92hUM
