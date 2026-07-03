@@ -87,7 +87,8 @@ function LeadStudioPage() {
     connected: boolean;
     leadCount: number;
   } | null>(null);
-  const [sheetLoading, setSheetLoading] = useState(false);
+  const [syncToSheetLoading, setSyncToSheetLoading] = useState(false);
+  const [importFromSheetLoading, setImportFromSheetLoading] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [syncMsgType, setSyncMsgType] = useState<"success" | "error">("success");
   const [newLeadId, setNewLeadId] = useState<string | null>(null);
@@ -138,7 +139,7 @@ function LeadStudioPage() {
   }
 
   async function handleSyncToSheet() {
-    setSheetLoading(true);
+    setSyncToSheetLoading(true);
     setSyncMsg(null);
     try {
       const res = await apiClient.post("/crm/leads/sync-to-sheet");
@@ -155,13 +156,13 @@ function LeadStudioPage() {
       setSyncMsg(err?.response?.data?.message || "Sync failed");
       setSyncMsgType("error");
     } finally {
-      setSheetLoading(false);
+      setSyncToSheetLoading(false);
       setTimeout(() => setSyncMsg(null), 6000);
     }
   }
 
   async function handleImportFromSheet() {
-    setSheetLoading(true);
+    setImportFromSheetLoading(true);
     setSyncMsg(null);
     try {
       const { data } = await apiClient.post("/crm/leads/import-from-sheet");
@@ -188,7 +189,7 @@ function LeadStudioPage() {
       setSyncMsg(err?.response?.data?.message || "Import failed");
       setSyncMsgType("error");
     } finally {
-      setSheetLoading(false);
+      setImportFromSheetLoading(false);
       setTimeout(() => setSyncMsg(null), 6000);
     }
   }
@@ -263,10 +264,10 @@ function LeadStudioPage() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={handleSyncToSheet}
-                disabled={sheetLoading}
+                disabled={syncToSheetLoading}
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white ring-1 ring-white/10 backdrop-blur hover:bg-white/10 disabled:opacity-50"
               >
-                {sheetLoading ? (
+                {syncToSheetLoading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <ArrowUpRight size={16} />
@@ -276,10 +277,10 @@ function LeadStudioPage() {
 
               <button
                 onClick={handleImportFromSheet}
-                disabled={sheetLoading}
+                disabled={importFromSheetLoading}
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white ring-1 ring-white/10 backdrop-blur hover:bg-white/10 disabled:opacity-50"
               >
-                {sheetLoading ? (
+                {importFromSheetLoading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <Database size={16} />
