@@ -38,6 +38,7 @@ import ClientProtectedRoute from "./routes/ClientProtectedRoute";
 import ClientLayout from "./components/layout/ClientLayout";
 import ClientUsersPage from "./pages/ClientUsersPage";
 import SeoPage from "./pages/SeoPage";
+import LeadStudioPage from "./pages/LeadStudioPage";
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/client-users" element={<ClientUsersPage />} />
           <Route path="/seo" element={<SeoPage />} />
+          <Route path="/lead-studio" element={<LeadStudioPage />} />
           </Route>
         </Route>
       </Route>

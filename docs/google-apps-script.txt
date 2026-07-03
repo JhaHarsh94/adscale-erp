@@ -1,0 +1,110 @@
+============================================================
+Google Sheets Sync — Apps Script Setup (100% Free)
+============================================================
+No Google Cloud billing. No API keys. No service accounts.
+
+STEP 1: Open your Google Sheet
+  https://docs.google.com/spreadsheets/d/1vAankCZMlz64zNa-rXaoHxdshmvhkJza1ubz-i92hUM
+
+STEP 2: Open Apps Script
+  Extensions → Apps Script
+
+STEP 3: Replace the default Code.gs with this:
+
+------------------------------------------------------------
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action || 'append';
+
+  // Ensure headers
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'created_time', 'full_name', 'contact_name', 'phone_number',
+      'email', 'platform', 'status', 'notes', 'erp_lead_id'
+    ]);
+  }
+
+  if (action === 'update') {
+    // Find row by erp_lead_id and update status/notes
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
+    const idCol = headers.indexOf('erp_lead_id');
+    const statusCol = headers.indexOf('status');
+    const notesCol = headers.indexOf('notes');
+
+    if (idCol === -1) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: false, error: 'erp_lead_id column not found' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idCol]) === String(data.id)) {
+        if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue(data.status);
+        if (notesCol !== -1 && data.notes) sheet.getRange(i + 1, notesCol + 1).setValue(data.notes);
+        break;
+      }
+    }
+  } else {
+    // Append new row
+    sheet.appendRow([
+      data.created_time || new Date().toISOString(),
+      data.full_name || '',
+      data.contact_name || '',
+      data.phone || '',
+      data.email || '',
+      data.platform || 'ERP',
+      data.status || 'NEW',
+      data.notes || '',
+      data.id || ''
+    ]);
+  }
+
+  return ContentService.createTextOutput(
+    JSON.stringify({ success: true })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length === 0) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ data: [] })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const headers = rows[0];
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = {};
+    headers.forEach((header, index) => {
+      row[header] = rows[i][index];
+    });
+    result.push(row);
+  }
+
+  return ContentService.createTextOutput(
+    JSON.stringify({ data: result })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+------------------------------------------------------------
+
+STEP 4: Deploy
+  Click "Deploy" → "New deployment"
+  Select type: "Web app"
+  Execute as: "Me"
+  Who has access: "Anyone"
+  Click "Deploy"
+
+STEP 5: Copy the Web App URL
+  It looks like:
+  https://script.google.com/macros/s/.../exec
+
+STEP 6: Set it in your .env file
+  GOOGLE_APPS_SCRIPT_URL="https://script.google.com/macros/s/.../exec"
+
+That's it! No billing, no credit card, no Google Cloud project needed.
