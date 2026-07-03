@@ -14,9 +14,7 @@ import { AppError } from "../../utils/AppError";
 import { successResponse } from "../../utils/response";
 import { getIO } from "../../config/socket";
 import {
-  appendLeadToSheet,
   importLeadsFromSheet,
-  updateLeadInSheet,
   getSheetStatus as checkSheetStatus,
 } from "../../services/googleSheets.service";
 
@@ -350,18 +348,6 @@ export const createLead = asyncHandler(async (req, res: Response) => {
 
   try {
     getIO().emit("lead:created", lead);
-    appendLeadToSheet({
-      id: lead.id,
-      companyName: lead.companyName,
-      contactName: lead.contactName,
-      email: lead.email,
-      phone: lead.phone,
-      source: lead.source,
-      status: lead.status,
-      estimatedValue: lead.estimatedValue,
-      notes: lead.notes,
-      createdAt: lead.createdAt,
-    });
   } catch {}
 
   return successResponse(res, 201, "Lead created successfully", lead);
@@ -416,13 +402,6 @@ export const updateLead = asyncHandler(async (req, res: Response) => {
 
   try {
     getIO().emit("lead:updated", updatedLead);
-    if (req.body.status || req.body.notes !== undefined) {
-      updateLeadInSheet(
-        updatedLead.id,
-        updatedLead.status,
-        req.body.notes !== undefined ? updatedLead.notes : undefined
-      );
-    }
   } catch {}
 
   return successResponse(res, 200, "Lead updated successfully", updatedLead);
@@ -1304,42 +1283,6 @@ export const deletePipelineItem = asyncHandler(async (req, res: Response) => {
 /* =========================
    Google Sheets Sync
 ========================= */
-
-export const syncLeadsToSheet = asyncHandler(async (req, res: Response) => {
-  const leads = await prisma.lead.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-
-  let synced = 0;
-  let failed = 0;
-
-  for (const lead of leads) {
-    try {
-      const ok = await appendLeadToSheet({
-        id: lead.id,
-        companyName: lead.companyName,
-        contactName: lead.contactName,
-        email: lead.email,
-        phone: lead.phone,
-        source: lead.source,
-        status: lead.status,
-        estimatedValue: lead.estimatedValue,
-        notes: lead.notes,
-        createdAt: lead.createdAt,
-      });
-      if (ok) synced++;
-      else failed++;
-    } catch {
-      failed++;
-    }
-  }
-
-  return successResponse(res, 200, "Sync completed", {
-    total: leads.length,
-    synced,
-    failed,
-  });
-});
 
 export const importSheetLeads = asyncHandler(async (req, res: Response) => {
   const result = await importLeadsFromSheet();

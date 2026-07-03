@@ -161,29 +161,38 @@ export async function importLeadsFromSheet(): Promise<{
       return idx !== -1 ? row[idx]?.replace(/^"|"$/g, "").trim() || "" : "";
     };
 
-    const idIdx = colIndex("id");
-    const nameIdx = colIndex("full_name");
-    const phoneIdx = colIndex("phone_number");
-    const emailIdx = colIndex("email");
-    const platformIdx = colIndex("platform");
-    const statusIdx = colIndex("lead_status");
+    const fieldMap: Record<string, number> = {};
+    headers.forEach((h, i) => { fieldMap[h.toLowerCase()] = i; });
+    const gc = (row: string[], name: string) => {
+      const idx = fieldMap[name.toLowerCase()];
+      return idx !== undefined ? row[idx]?.replace(/^"|"$/g, "").trim() || "" : "";
+    };
 
     for (let i = 1; i < lines.length; i++) {
       try {
-        const row = lines[i].split(",").map((c) => c.trim());
+        const raw = lines[i];
+        const row: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (const ch of raw) {
+          if (ch === '"') inQuotes = !inQuotes;
+          else if (ch === "," && !inQuotes) { row.push(current); current = ""; }
+          else current += ch;
+        }
+        row.push(current);
 
-        const fullName = nameIdx !== -1 ? row[nameIdx]?.replace(/^"|"$/g, "") : "";
-        const phone = phoneIdx !== -1 ? row[phoneIdx]?.replace(/^"|"$/g, "") : "";
-        const email = emailIdx !== -1 ? row[emailIdx]?.replace(/^"|"$/g, "") : "";
-        const platform = platformIdx !== -1 ? row[platformIdx]?.replace(/^"|"$/g, "").toUpperCase() : "";
-        const leadStatus = statusIdx !== -1 ? row[statusIdx]?.replace(/^"|"$/g, "").toUpperCase() : "CREATED";
-        const sheetId = idIdx !== -1 ? row[idIdx]?.replace(/^"|"$/g, "") : "";
+        const fullName = gc(row, "full_name");
+        const phone = gc(row, "phone_number");
+        const email = gc(row, "email");
+        const platform = gc(row, "platform").toUpperCase();
+        const leadStatus = gc(row, "lead_status").toUpperCase();
+        const sheetId = gc(row, "id");
 
         if (!fullName && !phone && !email) continue;
 
         if (sheetId) {
           const existing = await prisma.lead.findFirst({
-            where: { notes: { contains: sheetId } },
+            where: { notes: { contains: `"sheetId":"${sheetId}"` } },
           });
           if (existing) continue;
         }
@@ -207,6 +216,12 @@ export async function importLeadsFromSheet(): Promise<{
 
         const source = leadSourceMap[platform] || "SOCIAL_MEDIA";
 
+        const sheetMeta: Record<string, string> = {};
+        headers.forEach((h) => {
+          const val = gc(row, h);
+          if (val) sheetMeta[h] = val;
+        });
+
         await prisma.lead.create({
           data: {
             companyName: fullName || `Lead - ${email || phone}`,
@@ -216,7 +231,7 @@ export async function importLeadsFromSheet(): Promise<{
             source: source as any,
             status:
               leadStatus === "CREATED" ? "NEW" : leadStatus === "CONTACTED" ? "CONTACTED" : "NEW",
-            notes: `Imported from Google Sheets (${platform || "unknown"}) | SheetID: ${sheetId}`,
+            notes: JSON.stringify({ ...sheetMeta, _note: `Imported from Google Sheets (${platform || "unknown"})` }),
           },
         });
 

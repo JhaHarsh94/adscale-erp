@@ -20,7 +20,6 @@ import {
   getLeadById,
   getLeads,
   getSalesPipeline,
-  syncLeadsToSheet,
   importSheetLeads,
   getSheetConnectionStatus,
   updateClient,
@@ -157,13 +156,6 @@ router.delete(
 );
 
 /* Google Sheets Sync */
-router.post(
-  "/leads/sync-to-sheet",
-  protect,
-  allowRoles(...crmWriteRoles),
-  syncLeadsToSheet
-);
-
 router.post(
   "/leads/import-from-sheet",
   protect,
