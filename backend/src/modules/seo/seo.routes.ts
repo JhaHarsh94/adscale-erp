@@ -16,6 +16,7 @@ import {
   listBacklinks,
   listKeywords,
   listSeoProjects,
+  suggestKeywords,
   updateBacklink,
   updateKeyword,
   updateSeoProject,
@@ -38,6 +39,7 @@ router.put("/projects/:id", updateSeoProject);
 router.delete("/projects/:id", deleteSeoProject);
 
 router.get("/keywords", listKeywords);
+router.get("/keywords/suggest", suggestKeywords);
 router.post("/keywords", createKeyword);
 router.put("/keywords/:id", updateKeyword);
 router.delete("/keywords/:id", deleteKeyword);

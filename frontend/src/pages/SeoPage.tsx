@@ -58,9 +58,20 @@ export default function SeoPage() {
   const [showBlForm, setShowBlForm] = useState(false);
   const [blForm, setBlForm] = useState({ seoProjectId: "", sourceUrl: "", targetUrl: "", domainAuthority: "" });
 
+  // suggestions
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
   // filters
   const [search, setSearch] = useState("");
   const [filterProject, setFilterProject] = useState("");
+
+  async function fetchSuggestions() {
+    if (kwForm.keyword.length < 2) return;
+    try {
+      const res = await apiClient.get("/seo/keywords/suggest", { params: { q: kwForm.keyword } });
+      setSuggestions(res.data.data || []);
+    } catch { setMsg("Failed to fetch suggestions"); }
+  }
 
   function msgOk(s: string) { setMsg(s); setTimeout(() => setMsg(""), 3000); }
 
@@ -344,10 +355,20 @@ export default function SeoPage() {
                   <option value="">Select project *</option>
                   {projects.map((p) => <option key={p.id} value={p.id}>{p.domain}</option>)}
                 </select>
-                <input className={f} placeholder="Keyword *" value={kwForm.keyword} onChange={(e) => setKwForm({ ...kwForm, keyword: e.target.value })} />
+                <div className="relative">
+                  <input className={f + " pr-20"} placeholder="Keyword *" value={kwForm.keyword} onChange={(e) => { setKwForm({ ...kwForm, keyword: e.target.value }); setSuggestions([]); }} />
+                  <button type="button" onClick={fetchSuggestions} disabled={kwForm.keyword.length < 2} className="absolute right-1 top-1 rounded-lg bg-blue-100 px-2.5 py-1.5 text-[10px] font-black text-blue-700 hover:bg-blue-200 disabled:opacity-40">Suggest</button>
+                </div>
                 <input className={f} type="number" placeholder="Search volume" value={kwForm.searchVolume} onChange={(e) => setKwForm({ ...kwForm, searchVolume: e.target.value })} />
                 <input className={f} type="number" placeholder="Difficulty (0-100)" value={kwForm.keywordDifficulty} onChange={(e) => setKwForm({ ...kwForm, keywordDifficulty: e.target.value })} />
               </div>
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.map((s, i) => (
+                    <button key={i} type="button" onClick={() => { setKwForm({ ...kwForm, keyword: s }); setSuggestions([]); }} className="rounded-full border border-blue-200 bg-white px-3 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition">{s}</button>
+                  ))}
+                </div>
+              )}
               <button onClick={createKeyword} className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Add</button>
             </div>
           )}

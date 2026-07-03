@@ -5,6 +5,8 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { successResponse } from "../../utils/response";
 import type { AuthRequest } from "../../middlewares/auth.middleware";
 
+const GOOGLE_SUGGEST = "https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=in&q=";
+
 const projectInclude = { select: { id: true, name: true } };
 
 /* ─── Dashboard ─── */
@@ -247,6 +249,20 @@ export const deleteBacklink = asyncHandler(async (req: AuthRequest, res: Respons
 });
 
 /* ─── Projects without SEO ─── */
+/* ─── Keyword Suggestions ─── */
+export const suggestKeywords = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { q } = req.query;
+  if (!q || String(q).length < 2) throw new AppError("Query must be at least 2 characters", 400);
+  try {
+    const response = await fetch(`${GOOGLE_SUGGEST}${encodeURIComponent(String(q))}`);
+    const data = await response.json();
+    const suggestions: string[] = data[1]?.map((item: string[]) => item[0]) || [];
+    return successResponse(res, 200, "Keyword suggestions", suggestions);
+  } catch {
+    throw new AppError("Failed to fetch suggestions", 502);
+  }
+});
+
 export const getProjectsWithoutSeo = asyncHandler(async (req: AuthRequest, res: Response) => {
   const projects = await prisma.project.findMany({
     where: { seo: null },
