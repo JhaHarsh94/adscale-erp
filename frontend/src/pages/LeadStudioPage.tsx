@@ -165,8 +165,8 @@ function LeadStudioPage() {
 
   async function handleStatusChange(id: string, status: string) {
     try {
-      const r = await apiClient.put(`/crm/leads/${id}`, { status });
-      setLeads((prev) => prev.map((l) => (l.id === id ? r.data.data : l)));
+      const { data } = await apiClient.put(`/crm/leads/${id}`, { status });
+      setLeads((prev) => prev.map((l) => (l.id === id ? data.data : l)));
     } catch (err: any) {
       setSyncMsg(err?.response?.data?.message || "Update failed");
       setSyncMsgType("error");
@@ -191,7 +191,7 @@ function LeadStudioPage() {
 
   async function handleConvert(id: string) {
     try {
-      const r = await apiClient.post(`/crm/leads/${id}/convert`, {});
+      await apiClient.post(`/crm/leads/${id}/convert`, {});
       setLeads((prev) => prev.filter((l) => l.id !== id));
       setSyncMsg("Lead converted to client");
       setSyncMsgType("success");
