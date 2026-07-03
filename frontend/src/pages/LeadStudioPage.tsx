@@ -88,6 +88,8 @@ function LeadStudioPage() {
     leadCount: number;
   } | null>(null);
   const [sheetLoading, setSheetLoading] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [syncMsgType, setSyncMsgType] = useState<"success" | "error">("success");
   const [newLeadId, setNewLeadId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -137,30 +139,57 @@ function LeadStudioPage() {
 
   async function handleSyncToSheet() {
     setSheetLoading(true);
+    setSyncMsg(null);
     try {
-      await apiClient.post("/crm/leads/sync-to-sheet");
+      const res = await apiClient.post("/crm/leads/sync-to-sheet");
+      const d = res.data.data;
+      if (d.failed > 0 && d.synced === 0) {
+        setSyncMsg("Google Sheets not configured. Deploy the free Apps Script first.");
+        setSyncMsgType("error");
+      } else {
+        setSyncMsg(`Synced ${d.synced} leads to sheet (${d.failed} failed)`);
+        setSyncMsgType(d.failed > 0 ? "error" : "success");
+      }
       await checkSheet();
+    } catch (err: any) {
+      setSyncMsg(err?.response?.data?.message || "Sync failed");
+      setSyncMsgType("error");
     } finally {
       setSheetLoading(false);
+      setTimeout(() => setSyncMsg(null), 6000);
     }
   }
 
   async function handleImportFromSheet() {
     setSheetLoading(true);
+    setSyncMsg(null);
     try {
       const { data } = await apiClient.post("/crm/leads/import-from-sheet");
-      if (data.data?.recentLeads) {
+      const result = data.data;
+      if (result.imported > 0) {
+        setSyncMsg(`Imported ${result.imported} leads from sheet (${result.errors} errors)`);
+        setSyncMsgType(result.errors > 0 ? "error" : "success");
+        loadLeads();
+      } else {
+        setSyncMsg(result.errors > 0 ? `Import failed (${result.errors} errors)` : "No new leads to import");
+        setSyncMsgType(result.errors > 0 ? "error" : "success");
+      }
+      if (result.recentLeads) {
         setLeads((prev) => {
           const existingIds = new Set(prev.map((l) => l.id));
-          const newOnes = data.data.recentLeads.filter(
+          const newOnes = result.recentLeads.filter(
             (l: Lead) => !existingIds.has(l.id)
           );
           return [...newOnes, ...prev];
         });
       }
       await checkSheet();
+    } catch (err: any) {
+      setSyncMsg(err?.response?.data?.message || "Import failed");
+      setSyncMsgType("error");
     } finally {
       setSheetLoading(false);
+      setTimeout(() => setSyncMsg(null), 6000);
     }
   }
 
@@ -349,6 +378,20 @@ function LeadStudioPage() {
               in .env (no billing, no API keys)
             </>
           )}
+        </div>
+      )}
+
+      {/* Sync/Import Feedback */}
+      {syncMsg && (
+        <div
+          className={`flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold ${
+            syncMsgType === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          <Zap size={16} className={syncMsgType === "success" ? "text-emerald-500" : "text-red-500"} />
+          {syncMsg}
         </div>
       )}
 

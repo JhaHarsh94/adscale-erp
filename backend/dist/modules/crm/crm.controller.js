@@ -3,12 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePipelineItem = exports.updatePipelineStage = exports.updatePipelineItem = exports.createPipelineItem = exports.getSalesPipeline = exports.deleteFollowUp = exports.completeFollowUp = exports.updateFollowUp = exports.createFollowUp = exports.getFollowUps = exports.deleteClientContact = exports.updateClientContact = exports.createClientContact = exports.deleteClient = exports.updateClient = exports.createClient = exports.getClientById = exports.getClients = exports.convertLeadToClient = exports.deleteLead = exports.updateLead = exports.createLead = exports.getLeadById = exports.getLeads = exports.getCrmDashboard = void 0;
+exports.getSheetConnectionStatus = exports.importSheetLeads = exports.syncLeadsToSheet = exports.deletePipelineItem = exports.updatePipelineStage = exports.updatePipelineItem = exports.createPipelineItem = exports.getSalesPipeline = exports.deleteFollowUp = exports.completeFollowUp = exports.updateFollowUp = exports.createFollowUp = exports.getFollowUps = exports.deleteClientContact = exports.updateClientContact = exports.createClientContact = exports.deleteClient = exports.updateClient = exports.createClient = exports.getClientById = exports.getClients = exports.convertLeadToClient = exports.deleteLead = exports.updateLead = exports.createLead = exports.getLeadById = exports.getLeads = exports.getCrmDashboard = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const asyncHandler_1 = require("../../utils/asyncHandler");
 const AppError_1 = require("../../utils/AppError");
 const response_1 = require("../../utils/response");
+const socket_1 = require("../../config/socket");
+const googleSheets_service_1 = require("../../services/googleSheets.service");
 const employeeSelect = {
     id: true,
     employeeCode: true,
@@ -272,6 +274,22 @@ exports.createLead = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
         },
         include: leadInclude,
     });
+    try {
+        (0, socket_1.getIO)().emit("lead:created", lead);
+        (0, googleSheets_service_1.appendLeadToSheet)({
+            id: lead.id,
+            companyName: lead.companyName,
+            contactName: lead.contactName,
+            email: lead.email,
+            phone: lead.phone,
+            source: lead.source,
+            status: lead.status,
+            estimatedValue: lead.estimatedValue,
+            notes: lead.notes,
+            createdAt: lead.createdAt,
+        });
+    }
+    catch { }
     return (0, response_1.successResponse)(res, 201, "Lead created successfully", lead);
 });
 exports.updateLead = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
@@ -311,6 +329,13 @@ exports.updateLead = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
         },
         include: leadInclude,
     });
+    try {
+        (0, socket_1.getIO)().emit("lead:updated", updatedLead);
+        if (req.body.status || req.body.notes !== undefined) {
+            (0, googleSheets_service_1.updateLeadInSheet)(updatedLead.id, updatedLead.status, req.body.notes !== undefined ? updatedLead.notes : undefined);
+        }
+    }
+    catch { }
     return (0, response_1.successResponse)(res, 200, "Lead updated successfully", updatedLead);
 });
 exports.deleteLead = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
@@ -328,6 +353,10 @@ exports.deleteLead = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
             id,
         },
     });
+    try {
+        (0, socket_1.getIO)().emit("lead:deleted", { id });
+    }
+    catch { }
     return (0, response_1.successResponse)(res, 200, "Lead deleted successfully");
 });
 exports.convertLeadToClient = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
@@ -930,4 +959,62 @@ exports.deletePipelineItem = (0, asyncHandler_1.asyncHandler)(async (req, res) =
         },
     });
     return (0, response_1.successResponse)(res, 200, "Pipeline item deleted successfully");
+});
+/* =========================
+   Google Sheets Sync
+========================= */
+exports.syncLeadsToSheet = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const leads = await prisma_1.default.lead.findMany({
+        orderBy: { createdAt: "desc" },
+    });
+    let synced = 0;
+    let failed = 0;
+    for (const lead of leads) {
+        try {
+            const ok = await (0, googleSheets_service_1.appendLeadToSheet)({
+                id: lead.id,
+                companyName: lead.companyName,
+                contactName: lead.contactName,
+                email: lead.email,
+                phone: lead.phone,
+                source: lead.source,
+                status: lead.status,
+                estimatedValue: lead.estimatedValue,
+                notes: lead.notes,
+                createdAt: lead.createdAt,
+            });
+            if (ok)
+                synced++;
+            else
+                failed++;
+        }
+        catch {
+            failed++;
+        }
+    }
+    return (0, response_1.successResponse)(res, 200, "Sync completed", {
+        total: leads.length,
+        synced,
+        failed,
+    });
+});
+exports.importSheetLeads = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const result = await (0, googleSheets_service_1.importLeadsFromSheet)();
+    const leads = await prisma_1.default.lead.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: leadInclude,
+    });
+    try {
+        (0, socket_1.getIO)().emit("leads:imported", { count: result.imported });
+    }
+    catch { }
+    return (0, response_1.successResponse)(res, 200, "Import completed", {
+        ...result,
+        recentLeads: leads,
+    });
+});
+exports.getSheetConnectionStatus = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const status = await (0, googleSheets_service_1.getSheetStatus)();
+    return (0, response_1.successResponse)(res, 200, "Sheet status fetched", status);
 });

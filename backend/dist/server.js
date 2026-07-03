@@ -37,6 +37,13 @@ const approval_routes_1 = __importDefault(require("./modules/approvals/approval.
 const file_routes_1 = __importDefault(require("./modules/files/file.routes"));
 const chat_routes_1 = __importDefault(require("./modules/chat/chat.routes"));
 const meeting_routes_1 = __importDefault(require("./modules/meetings/meeting.routes"));
+const meetingManagement_routes_1 = __importDefault(require("./modules/meetingManagement/meetingManagement.routes"));
+const knowledgeBase_routes_1 = __importDefault(require("./modules/knowledgeBase/knowledgeBase.routes"));
+const hrms_routes_1 = __importDefault(require("./modules/hrms/hrms.routes"));
+const payroll_routes_1 = __importDefault(require("./modules/payroll/payroll.routes"));
+const recruitment_routes_1 = __importDefault(require("./modules/recruitment/recruitment.routes"));
+const clientPortal_routes_1 = __importDefault(require("./modules/clientPortal/clientPortal.routes"));
+const seo_routes_1 = __importDefault(require("./modules/seo/seo.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
@@ -151,6 +158,13 @@ app.use("/api/approvals", approval_routes_1.default);
 app.use("/api/files", file_routes_1.default);
 app.use("/api/chat", chat_routes_1.default);
 app.use("/api/meetings", meeting_routes_1.default);
+app.use("/api/meeting-management", meetingManagement_routes_1.default);
+app.use("/api/knowledge-base", knowledgeBase_routes_1.default);
+app.use("/api/hrms", hrms_routes_1.default);
+app.use("/api/payroll", payroll_routes_1.default);
+app.use("/api/recruitment", recruitment_routes_1.default);
+app.use("/api/client-portal", clientPortal_routes_1.default);
+app.use("/api/seo", seo_routes_1.default);
 app.use(error_middleware_1.errorMiddleware);
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
