@@ -39,6 +39,7 @@ import recruitmentRoutes from "./modules/recruitment/recruitment.routes";
 import clientPortalRoutes from "./modules/clientPortal/clientPortal.routes";
 import seoRoutes from "./modules/seo/seo.routes";
 import socialMediaRoutes from "./modules/socialMedia/socialMedia.routes";
+import googleAdsRoutes from "./modules/googleAds/googleAds.routes";
 import { startSheetPoller } from "./services/sheetPoller";
 
 dotenv.config();
@@ -196,6 +197,7 @@ app.use("/api/recruitment", recruitmentRoutes);
 app.use("/api/client-portal", clientPortalRoutes);
 app.use("/api/seo", seoRoutes);
 app.use("/api/social-media", socialMediaRoutes);
+app.use("/api/google-ads", googleAdsRoutes);
 app.use(errorMiddleware);
 
 server.listen(PORT, () => {

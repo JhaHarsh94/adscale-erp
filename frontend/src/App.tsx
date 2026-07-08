@@ -40,6 +40,7 @@ import ClientUsersPage from "./pages/ClientUsersPage";
 import SeoPage from "./pages/SeoPage";
 import SocialMediaPage from "./pages/SocialMediaPage";
 import LeadStudioPage from "./pages/LeadStudioPage";
+import GoogleAdsPage from "./pages/GoogleAdsPage";
 
 function App() {
   return (
@@ -97,6 +98,7 @@ function App() {
           <Route path="/seo" element={<SeoPage />} />
           <Route path="/social-media" element={<SocialMediaPage />} />
           <Route path="/lead-studio" element={<LeadStudioPage />} />
+          <Route path="/google-ads" element={<GoogleAdsPage />} />
           </Route>
         </Route>
       </Route>
