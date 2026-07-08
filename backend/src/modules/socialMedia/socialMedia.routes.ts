@@ -21,7 +21,7 @@ import {
 
 const router = Router();
 
-const socialMediaRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER"];
+const socialMediaRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER", "TEAM_LEAD", "EMPLOYEE"];
 
 router.use(protect);
 router.use(allowRoles(...socialMediaRoles));
