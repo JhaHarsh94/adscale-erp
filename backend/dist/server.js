@@ -44,14 +44,24 @@ const payroll_routes_1 = __importDefault(require("./modules/payroll/payroll.rout
 const recruitment_routes_1 = __importDefault(require("./modules/recruitment/recruitment.routes"));
 const clientPortal_routes_1 = __importDefault(require("./modules/clientPortal/clientPortal.routes"));
 const seo_routes_1 = __importDefault(require("./modules/seo/seo.routes"));
+const socialMedia_routes_1 = __importDefault(require("./modules/socialMedia/socialMedia.routes"));
+const sheetPoller_1 = require("./services/sheetPoller");
 dotenv_1.default.config();
+process.on("uncaughtException", (err) => {
+    console.error("UNCAUGHT EXCEPTION:", err);
+});
+process.on("unhandledRejection", (reason) => {
+    console.error("UNHANDLED REJECTION:", reason);
+});
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, { cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] } });
 exports.io = io;
+// Trust NGINX Ingress / reverse proxy
+app.set("trust proxy", 1);
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-    : ["http://localhost:5173", "http://localhost:3000", "http://localhost"];
+    : ["http://localhost:5173", "http://localhost:3000", "http://187.127.134.114:30917"];
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -165,7 +175,9 @@ app.use("/api/payroll", payroll_routes_1.default);
 app.use("/api/recruitment", recruitment_routes_1.default);
 app.use("/api/client-portal", clientPortal_routes_1.default);
 app.use("/api/seo", seo_routes_1.default);
+app.use("/api/social-media", socialMedia_routes_1.default);
 app.use(error_middleware_1.errorMiddleware);
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    (0, sheetPoller_1.startSheetPoller)();
 });

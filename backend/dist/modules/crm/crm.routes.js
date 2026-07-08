@@ -49,7 +49,6 @@ router.put("/sales-pipeline/:id", auth_middleware_1.protect, (0, auth_middleware
 router.put("/sales-pipeline/:id/stage", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...crmWriteRoles), crm_controller_1.updatePipelineStage);
 router.delete("/sales-pipeline/:id", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...crmDeleteRoles), crm_controller_1.deletePipelineItem);
 /* Google Sheets Sync */
-router.post("/leads/sync-to-sheet", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...crmWriteRoles), crm_controller_1.syncLeadsToSheet);
 router.post("/leads/import-from-sheet", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...crmWriteRoles), crm_controller_1.importSheetLeads);
 router.get("/leads/sheet-status", auth_middleware_1.protect, (0, auth_middleware_1.allowRoles)(...crmReadRoles), crm_controller_1.getSheetConnectionStatus);
 exports.default = router;
