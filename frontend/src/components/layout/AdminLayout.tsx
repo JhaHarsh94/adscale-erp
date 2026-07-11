@@ -38,7 +38,7 @@ import NotificationBell from "./NotificationBell";
 
 const navItems: { label: string; path: string; icon: any; roles: string[] }[] = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "HR", "TEAM_LEAD", "SALES_MANAGER", "EMPLOYEE"] },
-  { label: "CEO Dashboard", path: "/ceo-dashboard", icon: Crown, roles: ["SUPER_ADMIN", "DIRECTOR"] },
+  { label: "CEO Dashboard", path: "/ceo-dashboard", icon: Crown, roles: ["SUPER_ADMIN"] },
   { label: "Departments", path: "/organization/departments", icon: Building2, roles: ["SUPER_ADMIN", "DIRECTOR", "HR", "OPERATIONS_MANAGER"] },
   { label: "Employees", path: "/employees", icon: UsersRound, roles: ["SUPER_ADMIN", "DIRECTOR", "HR", "OPERATIONS_MANAGER"] },
   { label: "Teams", path: "/organization/teams", icon: Layers3, roles: ["SUPER_ADMIN", "DIRECTOR", "HR", "OPERATIONS_MANAGER"] },

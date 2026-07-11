@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
-  AlertTriangle,
   BarChart3,
   Building2,
   CalendarCheck,
@@ -96,6 +95,7 @@ export default function CeoDashboardPage() {
   const [projForm, setProjForm] = useState({ name: "", clientId: "", managerId: "", startDate: "", endDate: "", budget: "", description: "" });
   const [taskForm, setTaskForm] = useState({ title: "", projectId: "", assignedToId: "", priority: "MEDIUM", dueDate: "", description: "" });
   const [ticketForm, setTicketForm] = useState({ title: "", description: "", clientId: "", projectId: "", priority: "MEDIUM" });
+  const [saForm, setSaForm] = useState({ name: "", email: "", password: "Admin@123" });
 
   const msg = (s: string) => { setMessage(s); setTimeout(() => setMessage(""), 4000); };
 
@@ -145,6 +145,14 @@ export default function CeoDashboardPage() {
     setBusy(true);
     try { await apiClient.post("/ceo/create-ticket", ticketForm); msg("Ticket created"); setTicketForm({ title: "", description: "", clientId: "", projectId: "", priority: "MEDIUM" }); await loadAll(); }
     catch { msg("Could not create ticket"); }
+    finally { setBusy(false); }
+  }
+
+  async function createSuperAdmin() {
+    if (!saForm.name || !saForm.email || !saForm.password) return msg("Name, email, and password required");
+    setBusy(true);
+    try { await apiClient.post("/ceo/create-super-admin", saForm); msg(`Super Admin "${saForm.name}" created`); setSaForm({ name: "", email: "", password: "Admin@123" }); await loadAll(); }
+    catch (e: any) { msg(e?.response?.data?.message || "Could not create Super Admin"); }
     finally { setBusy(false); }
   }
 
@@ -266,6 +274,21 @@ export default function CeoDashboardPage() {
             <button disabled={busy} onClick={createTicket} className="col-span-full flex items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-3 text-sm font-black text-white"><Ticket size={17} /> Create Ticket</button>
           </div>
         )}
+      </section>
+
+      {/* Create Super Admin */}
+      <section className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-6">
+        <div className="flex items-center gap-2">
+          <Crown className="text-amber-700" />
+          <h2 className="text-xl font-black text-amber-900">Create Super Admin</h2>
+        </div>
+        <p className="mt-1 text-sm font-semibold text-amber-700">Grant full system access to a new administrator.</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <input className={input + " border-amber-300 bg-white"} value={saForm.name} onChange={e => setSaForm({ ...saForm, name: e.target.value })} placeholder="Full name" />
+          <input className={input + " border-amber-300 bg-white"} value={saForm.email} onChange={e => setSaForm({ ...saForm, email: e.target.value })} placeholder="Email" />
+          <input className={input + " border-amber-300 bg-white"} value={saForm.password} onChange={e => setSaForm({ ...saForm, password: e.target.value })} placeholder="Password" />
+          <button disabled={busy} onClick={createSuperAdmin} className="flex items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-3 text-sm font-black text-white hover:bg-amber-800"><Crown size={17} /> Create Super Admin</button>
+        </div>
       </section>
 
       {/* Recent Activity + Module Shortcuts */}
