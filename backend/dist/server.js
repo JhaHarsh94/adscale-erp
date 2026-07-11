@@ -48,6 +48,7 @@ const socialMedia_routes_1 = __importDefault(require("./modules/socialMedia/soci
 const googleAds_routes_1 = __importDefault(require("./modules/googleAds/googleAds.routes"));
 const metaAds_routes_1 = __importDefault(require("./modules/metaAds/metaAds.routes"));
 const analytics_routes_1 = __importDefault(require("./modules/analytics/analytics.routes"));
+const ceoDashboard_routes_1 = __importDefault(require("./modules/ceoDashboard/ceoDashboard.routes"));
 const sheetPoller_1 = require("./services/sheetPoller");
 dotenv_1.default.config();
 process.on("uncaughtException", (err) => {
@@ -182,6 +183,7 @@ app.use("/api/social-media", socialMedia_routes_1.default);
 app.use("/api/google-ads", googleAds_routes_1.default);
 app.use("/api/meta-ads", metaAds_routes_1.default);
 app.use("/api/analytics", analytics_routes_1.default);
+app.use("/api/ceo", ceoDashboard_routes_1.default);
 app.use(error_middleware_1.errorMiddleware);
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
