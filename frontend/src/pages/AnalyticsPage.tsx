@@ -1,474 +1,407 @@
 import { useEffect, useState } from "react";
 import {
-  BarChart3, RefreshCcw, XCircle, TrendingUp, DollarSign, UsersRound,
-  FolderKanban, Ticket, Target, Clock, Building2, SmilePlus, IndianRupee,
-  Layers3, UserCheck, CalendarCheck, FileText,
+  BarChart3,
+  FileText,
+  GitCompare,
+  LayoutDashboard,
+  Plus,
+  RefreshCcw,
+  Target,
+  Trash2,
 } from "lucide-react";
 import { apiClient } from "../api/client";
-import type {
-  CeoDashboard, EmployeeAnalytics, ProjectAnalytics, TicketAnalytics,
-  AttendanceAnalytics, LeadAnalytics, ProductivityAnalytics,
-  DepartmentPerformance, ClientSatisfaction,
-} from "../types/analytics";
+import type { AnalyticsDashboard, AnalyticsOverview, AnalyticsReport, AnalyticsWidget, KpiDefinition, KpiResult } from "../types/analytics";
 
-const tabs = [
-  { key: "dashboard", label: "CEO Dashboard", icon: BarChart3 },
-  { key: "employees", label: "Employees", icon: UsersRound },
-  { key: "projects", label: "Projects", icon: FolderKanban },
-  { key: "tickets", label: "Tickets", icon: Ticket },
-  { key: "attendance", label: "Attendance", icon: CalendarCheck },
-  { key: "leads", label: "Leads", icon: Target },
-  { key: "productivity", label: "Productivity", icon: Clock },
-  { key: "departments", label: "Departments", icon: Building2 },
-  { key: "satisfaction", label: "Satisfaction", icon: SmilePlus },
+type Tab = "overview" | "dashboards" | "reports" | "kpis";
+
+const tabs: { key: Tab; label: string; icon: any }[] = [
+  { key: "overview", label: "Overview", icon: BarChart3 },
+  { key: "dashboards", label: "Dashboards", icon: LayoutDashboard },
+  { key: "reports", label: "Reports", icon: FileText },
+  { key: "kpis", label: "KPIs", icon: Target },
 ];
 
-function inr(n: number) { return "\u20B9" + n.toLocaleString("en-IN"); }
-
-function cn(n: number) { return n.toLocaleString("en-IN"); }
+const input = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold outline-none focus:border-emerald-500 focus:bg-white";
+const select = input + " appearance-none";
+const kpiUnit = (u: string | null) => u === "currency" ? "Rs." : u === "percentage" ? "%" : u || "";
+const kpiColor = (actual: number, target: number) => actual >= target ? "text-emerald-600" : actual >= target * 0.8 ? "text-amber-600" : "text-red-600";
 
 export default function AnalyticsPage() {
-  const [tab, setTab] = useState("dashboard");
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("overview");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const [ceo, setCeo] = useState<CeoDashboard | null>(null);
-  const [employees, setEmployees] = useState<EmployeeAnalytics | null>(null);
-  const [projects, setProjects] = useState<ProjectAnalytics | null>(null);
-  const [tickets, setTickets] = useState<TicketAnalytics | null>(null);
-  const [attendance, setAttendance] = useState<AttendanceAnalytics | null>(null);
-  const [leads, setLeads] = useState<LeadAnalytics | null>(null);
-  const [productivity, setProductivity] = useState<ProductivityAnalytics | null>(null);
-  const [deptPerf, setDeptPerf] = useState<DepartmentPerformance[]>([]);
-  const [satisfaction, setSatisfaction] = useState<ClientSatisfaction | null>(null);
+  /* Overview */
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
 
-  async function loadCeo() {
-    setLoading(true);
-    try { const res = await apiClient.get("/analytics/ceo-dashboard"); setCeo(res.data.data); } catch { setMsg("Failed to load CEO dashboard"); }
-    setLoading(false);
+  /* Dashboards */
+  const [dashboards, setDashboards] = useState<AnalyticsDashboard[]>([]);
+  const [dashboardForm, setDashboardForm] = useState({ name: "", description: "" });
+
+  /* Reports */
+  const [reports, setReports] = useState<AnalyticsReport[]>([]);
+  const [reportForm, setReportForm] = useState({ title: "", dataSource: "projects", description: "", filters: "{}" });
+  const [reportSnapshot, setReportSnapshot] = useState<Record<string, unknown> | null>(null);
+
+  /* KPIs */
+  const [kpis, setKpis] = useState<KpiDefinition[]>([]);
+  const [kpiForm, setKpiForm] = useState({ name: "", description: "", category: "general", unit: "", targetValue: "", targetType: "monthly", projectId: "" });
+  const [kpiResultForm, setKpiResultForm] = useState({ kpiDefinitionId: "", actualValue: "", periodStart: "", periodEnd: "", notes: "" });
+  const [kpiResults, setKpiResults] = useState<KpiResult[]>([]);
+  const [selectedKpiForResults, setSelectedKpiForResults] = useState("");
+
+  const msg = (s: string) => { setMessage(s); setTimeout(() => setMessage(""), 3000); };
+
+  /* ─── Overview ─── */
+  async function loadOverview() {
+    setBusy(true);
+    try { const r = await apiClient.get("/analytics/dashboard"); setOverview(r.data.data); }
+    catch { msg("Could not load analytics overview"); }
+    finally { setBusy(false); }
   }
-  async function loadEmployees() { try { const res = await apiClient.get("/analytics/employees"); setEmployees(res.data.data); } catch {} }
-  async function loadProjects() { try { const res = await apiClient.get("/analytics/projects"); setProjects(res.data.data); } catch {} }
-  async function loadTickets() { try { const res = await apiClient.get("/analytics/tickets"); setTickets(res.data.data); } catch {} }
-  async function loadAttendance() { try { const res = await apiClient.get("/analytics/attendance"); setAttendance(res.data.data); } catch {} }
-  async function loadLeads() { try { const res = await apiClient.get("/analytics/leads"); setLeads(res.data.data); } catch {} }
-  async function loadProductivity() { try { const res = await apiClient.get("/analytics/productivity"); setProductivity(res.data.data); } catch {} }
-  async function loadDeptPerf() { try { const res = await apiClient.get("/analytics/departments"); setDeptPerf(res.data.data || []); } catch {} }
-  async function loadSatisfaction() { try { const res = await apiClient.get("/analytics/client-satisfaction"); setSatisfaction(res.data.data); } catch {} }
 
-  useEffect(() => { if (tab === "dashboard") loadCeo(); }, [tab]);
-  useEffect(() => { if (tab === "employees") loadEmployees(); }, [tab]);
-  useEffect(() => { if (tab === "projects") loadProjects(); }, [tab]);
-  useEffect(() => { if (tab === "tickets") loadTickets(); }, [tab]);
-  useEffect(() => { if (tab === "attendance") loadAttendance(); }, [tab]);
-  useEffect(() => { if (tab === "leads") loadLeads(); }, [tab]);
-  useEffect(() => { if (tab === "productivity") loadProductivity(); }, [tab]);
-  useEffect(() => { if (tab === "departments") loadDeptPerf(); }, [tab]);
-  useEffect(() => { if (tab === "satisfaction") loadSatisfaction(); }, [tab]);
-
-  function statusColor(status: string) {
-    const colors: Record<string, string> = {
-      ACTIVE: "bg-green-50 text-green-700",
-      COMPLETED: "bg-blue-50 text-blue-700",
-      CANCELLED: "bg-red-50 text-red-700",
-      ON_HOLD: "bg-amber-50 text-amber-700",
-      IN_PROGRESS: "bg-indigo-50 text-indigo-700",
-      OPEN: "bg-blue-50 text-blue-700",
-      RESOLVED: "bg-green-50 text-green-700",
-      CLOSED: "bg-slate-100 text-slate-600",
-    };
-    return colors[status] || "bg-slate-100 text-slate-600";
+  /* ─── Dashboards ─── */
+  async function loadDashboards() {
+    setBusy(true);
+    try { const r = await apiClient.get("/analytics/dashboards"); setDashboards(r.data.data || []); }
+    catch { msg("Could not load dashboards"); }
+    finally { setBusy(false); }
   }
+
+  async function createDashboard() {
+    if (!dashboardForm.name) return msg("Name is required");
+    setBusy(true);
+    try {
+      await apiClient.post("/analytics/dashboards", dashboardForm);
+      msg("Dashboard created");
+      setDashboardForm({ name: "", description: "" });
+      await loadDashboards();
+    } catch { msg("Could not create dashboard"); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteDashboard(id: string) {
+    await apiClient.delete(`/analytics/dashboards/${id}`);
+    await loadDashboards();
+  }
+
+  /* ─── Reports ─── */
+  async function loadReports() {
+    setBusy(true);
+    try { const r = await apiClient.get("/analytics/reports"); setReports(r.data.data || []); }
+    catch { msg("Could not load reports"); }
+    finally { setBusy(false); }
+  }
+
+  async function generateReport() {
+    if (!reportForm.title || !reportForm.dataSource) return msg("Title and data source required");
+    setBusy(true);
+    try {
+      const filters = JSON.parse(reportForm.filters || "{}");
+      const r = await apiClient.post("/analytics/reports/generate", { ...reportForm, filters });
+      msg("Report generated");
+      setReportSnapshot(r.data.data.snapshot);
+      setReportForm({ title: "", dataSource: "projects", description: "", filters: "{}" });
+      await loadReports();
+    } catch { msg("Could not generate report"); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteReport(id: string) {
+    await apiClient.delete(`/analytics/reports/${id}`);
+    await loadReports();
+  }
+
+  /* ─── KPIs ─── */
+  async function loadKpis() {
+    setBusy(true);
+    try { const r = await apiClient.get("/analytics/kpis"); setKpis(r.data.data || []); }
+    catch { msg("Could not load KPIs"); }
+    finally { setBusy(false); }
+  }
+
+  async function createKpi() {
+    if (!kpiForm.name || !kpiForm.targetValue) return msg("Name and target value are required");
+    setBusy(true);
+    try {
+      await apiClient.post("/analytics/kpis", { ...kpiForm, targetValue: Number(kpiForm.targetValue), projectId: kpiForm.projectId || null });
+      msg("KPI created");
+      setKpiForm({ name: "", description: "", category: "general", unit: "", targetValue: "", targetType: "monthly", projectId: "" });
+      await loadKpis();
+    } catch { msg("Could not create KPI"); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteKpi(id: string) {
+    await apiClient.delete(`/analytics/kpis/${id}`);
+    await loadKpis();
+  }
+
+  async function loadKpiResults(kpiId: string) {
+    setSelectedKpiForResults(kpiId);
+    try { const r = await apiClient.get(`/analytics/kpi-results?kpiDefinitionId=${kpiId}`); setKpiResults(r.data.data || []); }
+    catch { msg("Could not load KPI results"); }
+  }
+
+  async function recordKpiResult() {
+    if (!kpiResultForm.kpiDefinitionId || !kpiResultForm.actualValue || !kpiResultForm.periodStart || !kpiResultForm.periodEnd) return msg("All fields required");
+    setBusy(true);
+    try {
+      await apiClient.post("/analytics/kpi-results", { ...kpiResultForm, actualValue: Number(kpiResultForm.actualValue) });
+      msg("Result recorded");
+      setKpiResultForm({ kpiDefinitionId: "", actualValue: "", periodStart: "", periodEnd: "", notes: "" });
+      await loadKpiResults(selectedKpiForResults);
+    } catch { msg("Could not record result"); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteKpiResult(id: string) {
+    await apiClient.delete(`/analytics/kpi-results/${id}`);
+    await loadKpiResults(selectedKpiForResults);
+  }
+
+  useEffect(() => {
+    if (tab === "overview") { void loadOverview(); }
+    else if (tab === "dashboards") { void loadDashboards(); }
+    else if (tab === "reports") { void loadReports(); }
+    else if (tab === "kpis") { void loadKpis(); }
+  }, [tab]);
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <section className="rounded-[2rem] bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-950 p-6 md:p-8 text-white">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[.28em] text-indigo-200">Phase 27</p>
-            <h1 className="mt-3 text-2xl md:text-4xl font-black">Analytics Center</h1>
-            <p className="mt-2 text-xs md:text-sm text-indigo-100">CEO dashboard and business intelligence across all modules.</p>
+    <div className="space-y-6">
+      <section className="rounded-[2rem] bg-gradient-to-br from-violet-700 via-indigo-800 to-slate-950 p-8 text-white">
+        <p className="text-xs font-black uppercase tracking-[.28em] text-violet-200">Phase 27</p>
+        <div className="mt-3 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-4xl font-black">Analytics Center</h1>
+            <p className="mt-2 text-sm text-violet-100">Dashboards, reports, and KPI tracking across the organization.</p>
           </div>
-          <button onClick={() => { if (tab === "dashboard") loadCeo(); }} className="rounded-xl bg-white/10 p-2.5 md:p-3"><RefreshCcw size={18} /></button>
+          <button onClick={() => { if (tab === "overview") loadOverview(); else if (tab === "dashboards") loadDashboards(); else if (tab === "reports") loadReports(); else loadKpis(); }} className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-black"><RefreshCcw size={17} /> Refresh</button>
         </div>
       </section>
 
-      {msg && (
-        <div className="rounded-xl bg-indigo-50 p-3 md:p-4 text-xs md:text-sm font-bold text-indigo-800 flex items-center justify-between">
-          <span>{msg}</span>
-          <button onClick={() => setMsg("")} className="text-indigo-400 hover:text-indigo-700"><XCircle size={16} /></button>
-        </div>
-      )}
+      {message && <div className="break-all rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm font-bold text-violet-800">{message}</div>}
 
-      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          return (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-b-2 transition whitespace-nowrap ${tab === t.key ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-400 hover:text-slate-700"}`}>
-              <Icon size={14} />{t.label}
-            </button>
-          );
-        })}
+      <div className="flex gap-2 rounded-2xl border bg-white p-2">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center justify-center gap-2 flex-1 rounded-xl px-4 py-3 text-sm font-black ${tab === t.key ? "bg-violet-700 text-white" : "text-slate-500"}`}>
+            <t.icon size={17} /> {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* ── CEO Dashboard Tab ── */}
-      {tab === "dashboard" && loading && (
-        <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>
-      )}
-      {tab === "dashboard" && !loading && ceo && (
+      {/* ─── Overview Tab ─── */}
+      {tab === "overview" && (
         <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Revenue", value: inr(ceo.revenue), icon: IndianRupee, color: "" },
-              { label: "Collected", value: inr(ceo.collected), icon: DollarSign, color: "" },
-              { label: "Outstanding", value: inr(ceo.outstanding), icon: FileText, color: "text-amber-600" },
-              { label: "Expenses", value: inr(ceo.expenses), icon: TrendingUp, color: "text-red-600" },
-              { label: "Profit", value: inr(ceo.profit), icon: TrendingUp, color: ceo.profit >= 0 ? "text-green-600" : "text-red-600" },
-              { label: "Profit Margin", value: `${ceo.profitMargin}%`, icon: BarChart3, color: "" },
-              { label: "Total Invoices", value: cn(ceo.totalInvoices), icon: FileText, color: "" },
-              { label: "Total Payments", value: cn(ceo.totalPayments), icon: DollarSign, color: "" },
-              { label: "Total Expenses", value: cn(ceo.totalExpenses), icon: TrendingUp, color: "" },
-              { label: "Active Employees", value: `${ceo.employees.active}/${ceo.employees.total}`, icon: UsersRound, color: "" },
-              { label: "Active Projects", value: `${ceo.projects.active}/${ceo.projects.total}`, icon: FolderKanban, color: "" },
-              { label: "Open Tickets", value: `${ceo.tickets.open}/${ceo.tickets.total}`, icon: Ticket, color: "text-amber-600" },
-              { label: "Total Clients", value: cn(ceo.clients), icon: UsersRound, color: "" },
-              { label: "Lead Conversion", value: `${ceo.leads.conversionRate}%`, icon: Target, color: "text-green-600" },
-              { label: "Today Attendance", value: cn(ceo.attendance.today), icon: CalendarCheck, color: "" },
-              { label: "Total Users", value: cn(ceo.users), icon: UserCheck, color: "" },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className={c.color || "text-indigo-700"} size={18} />
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
-                  <p className={`mt-0.5 md:mt-1 text-xl md:text-2xl font-black ${c.color || "text-slate-900"}`}>{c.value}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">Departments</h3>
-              {ceo.departments.length === 0 ? (
-                <p className="text-sm text-slate-400">No department data</p>
-              ) : (
-                <div className="space-y-2">
-                  {ceo.departments.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                      <span className="text-sm font-bold text-slate-900">{d.name}</span>
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{d.employeeCount} employees</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">Lead Pipeline</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <span className="text-sm font-bold text-slate-900">Total Leads</span>
-                  <span className="font-black text-indigo-700">{cn(ceo.leads.total)}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <span className="text-sm font-bold text-slate-900">Converted</span>
-                  <span className="font-black text-green-700">{cn(ceo.leads.converted)}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <span className="text-sm font-bold text-slate-900">Conversion Rate</span>
-                  <span className="font-black text-blue-700">{ceo.leads.conversionRate}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Employees Tab ── */}
-      {tab === "employees" && !employees && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "employees" && employees && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Total", value: cn(employees.total), icon: UsersRound, color: "" },
-              { label: "Active", value: cn(employees.active), icon: UserCheck, color: "text-green-600" },
-              { label: "Inactive", value: cn(employees.inactive), icon: UsersRound, color: "text-slate-400" },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className={c.color || "text-indigo-700"} size={18} />
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
-                  <p className={`mt-0.5 md:mt-1 text-xl md:text-2xl font-black ${c.color || "text-slate-900"}`}>{c.value}</p>
-                </div>
-              );
-            })}
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">By Department</h3>
-              <div className="space-y-2">
-                {employees.byDepartment.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                    <span className="text-sm font-bold text-slate-900">{d.name}</span>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{d.count}</span>
-                  </div>
-                ))}
-                {employees.byDepartment.length === 0 && <p className="text-sm text-slate-400">No departments</p>}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">Recent Joiners</h3>
-              <div className="space-y-2">
-                {employees.recentJoiners.slice(0, 8).map((e) => (
-                  <div key={e.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-slate-900 truncate">{e.fullName}</p>
-                      <p className="text-[10px] text-slate-500">{e.department?.name || "No dept"}{e.designation ? ` — ${e.designation.name}` : ""}</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400">{new Date(e.joiningDate).toLocaleDateString()}</span>
-                  </div>
-                ))}
-                {employees.recentJoiners.length === 0 && <p className="text-sm text-slate-400">No recent joiners</p>}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Projects Tab ── */}
-      {tab === "projects" && !projects && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "projects" && projects && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border bg-white p-3 md:p-4">
-              <FolderKanban className="text-indigo-700" size={18} />
-              <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">Total Projects</p>
-              <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{cn(projects.total)}</p>
-            </div>
-            {projects.byStatus.map((s) => (
-              <div key={s.status} className="rounded-2xl border bg-white p-3 md:p-4">
-                <Layers3 className="text-indigo-700" size={18} />
-                <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{s.status}</p>
-                <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{cn(s.count)}</p>
+              ["Total Dashboards", overview?.totalDashboards ?? 0, "bg-violet-50 text-violet-700"],
+              ["Generated Reports", overview?.totalReports ?? 0, "bg-indigo-50 text-indigo-700"],
+              ["Active KPIs", overview?.totalKpis ?? 0, "bg-emerald-50 text-emerald-700"],
+            ].map(([label, value, color]) => (
+              <div key={String(label)} className="rounded-2xl border bg-white p-6">
+                <p className="text-xs font-black uppercase text-slate-400">{String(label)}</p>
+                <p className={`mt-2 text-4xl font-black ${String(color)}`}>{String(value)}</p>
               </div>
             ))}
-          </div>
-          <div className="rounded-2xl border bg-white p-4">
-            <h3 className="font-black text-slate-900 mb-3">Recent Projects</h3>
-            <div className="space-y-2">
-              {projects.recentProjects.map((p) => (
-                <div key={p.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900 truncate">{p.name}</p>
-                    <p className="text-[10px] text-slate-500">{p.client?.name || "No client"} — {new Date(p.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusColor(p.status)}`}>{p.status}</span>
-                </div>
-              ))}
-              {projects.recentProjects.length === 0 && <p className="text-sm text-slate-400">No projects</p>}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Tickets Tab ── */}
-      {tab === "tickets" && !tickets && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "tickets" && tickets && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border bg-white p-3 md:p-4">
-              <Ticket className="text-indigo-700" size={18} />
-              <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">Total Tickets</p>
-              <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{cn(tickets.total)}</p>
-            </div>
-            <div className="rounded-2xl border bg-white p-3 md:p-4">
-              <Clock className="text-red-600" size={18} />
-              <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">Overdue</p>
-              <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-red-600">{cn(tickets.overdue)}</p>
-            </div>
-            {tickets.byStatus.map((s) => (
-              <div key={s.status} className="rounded-2xl border bg-white p-3 md:p-4">
-                <Ticket className="text-indigo-700" size={18} />
-                <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{s.status}</p>
-                <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{cn(s.count)}</p>
-              </div>
-            ))}
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">By Priority</h3>
-              <div className="space-y-2">
-                {tickets.byPriority.map((p) => (
-                  <div key={p.priority} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                    <span className="text-sm font-bold text-slate-900">{p.priority}</span>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{cn(p.count)}</span>
-                  </div>
-                ))}
-                {tickets.byPriority.length === 0 && <p className="text-sm text-slate-400">No priority data</p>}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Attendance Tab ── */}
-      {tab === "attendance" && !attendance && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "attendance" && attendance && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Records", value: cn(attendance.totalRecords), icon: CalendarCheck, color: "" },
-              { label: "Present", value: cn(attendance.present), icon: UserCheck, color: "text-green-600" },
-              { label: "Late", value: cn(attendance.late), icon: Clock, color: "text-amber-600" },
-              { label: "Absent", value: cn(attendance.absent), icon: UsersRound, color: "text-red-600" },
-              { label: "Half Day", value: cn(attendance.halfDay), icon: Clock, color: "text-orange-600" },
-              { label: "Attendance Rate", value: `${attendance.attendanceRate}%`, icon: BarChart3, color: "text-green-600" },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className={c.color || "text-indigo-700"} size={18} />
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
-                  <p className={`mt-0.5 md:mt-1 text-xl md:text-2xl font-black ${c.color || "text-slate-900"}`}>{c.value}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Leads Tab ── */}
-      {tab === "leads" && !leads && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "leads" && leads && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border bg-white p-3 md:p-4">
-              <Target className="text-indigo-700" size={18} />
-              <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">Total Leads</p>
-              <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{cn(leads.total)}</p>
-            </div>
-            <div className="rounded-2xl border bg-white p-3 md:p-4">
-              <Target className="text-green-600" size={18} />
-              <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">Conversion Rate</p>
-              <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-green-600">{leads.conversionRate}%</p>
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">By Status</h3>
-              <div className="space-y-2">
-                {leads.byStatus.map((s) => (
-                  <div key={s.status} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                    <span className="text-sm font-bold text-slate-900">{s.status}</span>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{cn(s.count)}</span>
-                  </div>
-                ))}
-                {leads.byStatus.length === 0 && <p className="text-sm text-slate-400">No lead data</p>}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-white p-4">
-              <h3 className="font-black text-slate-900 mb-3">By Source</h3>
-              <div className="space-y-2">
-                {leads.bySource.map((s) => (
-                  <div key={s.source} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                    <span className="text-sm font-bold text-slate-900">{s.source || "Unknown"}</span>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{cn(s.count)}</span>
-                  </div>
-                ))}
-                {leads.bySource.length === 0 && <p className="text-sm text-slate-400">No source data</p>}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Productivity Tab ── */}
-      {tab === "productivity" && !productivity && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "productivity" && productivity && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Total Work Logs", value: cn(productivity.totalWorkLogs), icon: Clock, color: "" },
-              { label: "Total Hours", value: `${cn(Math.round(productivity.totalHours))}h`, icon: Clock, color: "text-green-600" },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className={c.color || "text-indigo-700"} size={18} />
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
-                  <p className={`mt-0.5 md:mt-1 text-xl md:text-2xl font-black ${c.color || "text-slate-900"}`}>{c.value}</p>
-                </div>
-              );
-            })}
-          </div>
-          <div className="rounded-2xl border bg-white p-4">
-            <h3 className="font-black text-slate-900 mb-3">Top Employees by Hours</h3>
-            <div className="space-y-2">
-              {productivity.topEmployees.map((e, i) => (
-                <div key={e.employeeId} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-xs font-black text-indigo-500 w-5">#{i + 1}</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">{e.employeeName}</p>
-                      <p className="text-[10px] text-slate-500">{e.department} — {e.employeeCode}</p>
+          </section>
+          <section className="rounded-2xl border bg-white p-6">
+            <h2 className="text-xl font-black">Recent Dashboards</h2>
+            {overview?.dashboards && overview.dashboards.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {overview.dashboards.map(d => (
+                  <div key={d.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-4">
+                    <div>
+                      <p className="font-black text-slate-900">{d.name}</p>
+                      {d.description && <p className="text-sm font-semibold text-slate-500">{d.description}</p>}
                     </div>
+                    <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">{d._count?.widgets || 0} widgets</span>
                   </div>
-                  <span className="font-black text-indigo-700">{Math.round(e.hours)}h</span>
-                </div>
-              ))}
-              {productivity.topEmployees.length === 0 && <p className="text-sm text-slate-400">No productivity data</p>}
-            </div>
-          </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 font-bold text-slate-400">No dashboards yet. Create one to get started.</p>
+            )}
+          </section>
         </div>
       )}
 
-      {/* ── Departments Tab ── */}
-      {tab === "departments" && deptPerf.length === 0 && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "departments" && deptPerf.length > 0 && (
-        <div className="space-y-4">
-          {deptPerf.map((d) => (
-            <div key={d.id} className="rounded-2xl border bg-white p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-indigo-100 p-2.5 text-indigo-700"><Building2 size={18} /></div>
+      {/* ─── Dashboards Tab ─── */}
+      {tab === "dashboards" && (
+        <div className="grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
+          <div className="rounded-2xl border bg-white p-6">
+            <div className="flex items-center gap-2">
+              <Plus className="text-violet-700" />
+              <h2 className="text-xl font-black">New Dashboard</h2>
+            </div>
+            <div className="mt-5 space-y-3">
+              <input className={input} value={dashboardForm.name} onChange={e => setDashboardForm({ ...dashboardForm, name: e.target.value })} placeholder="Dashboard name" />
+              <textarea className={input} value={dashboardForm.description} onChange={e => setDashboardForm({ ...dashboardForm, description: e.target.value })} placeholder="Description (optional)" rows={3} />
+              <button disabled={busy} onClick={createDashboard} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 py-3 text-sm font-black text-white">Create Dashboard</button>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {dashboards.length === 0 && <div className="rounded-2xl border bg-white p-8 text-center font-bold text-slate-400">No dashboards yet.</div>}
+            {dashboards.map(d => (
+              <article key={d.id} className="rounded-2xl border bg-white p-5">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row">
                   <div>
-                    <p className="font-black text-slate-900">{d.name}</p>
-                    <p className="text-xs font-semibold text-slate-500">{d.activeEmployees} active / {d.totalEmployees} total employees</p>
+                    <div className="flex items-center gap-2">
+                      {d.isDefault && <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">Default</span>}
+                      <span className="text-xs font-bold text-slate-400">{d._count?.widgets || 0} widgets</span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black">{d.name}</h3>
+                    {d.description && <p className="mt-1 text-sm font-semibold text-slate-500">{d.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => deleteDashboard(d.id)} className="rounded-xl border p-2.5 text-red-600"><Trash2 size={17} /></button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-indigo-700">{Math.round(d.hoursLogged)}h</p>
-                  <p className="text-[10px] font-bold text-slate-400">hours (30d)</p>
-                </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ── Satisfaction Tab ── */}
-      {tab === "satisfaction" && !satisfaction && <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /></div>}
-      {tab === "satisfaction" && satisfaction && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Total Clients", value: cn(satisfaction.totalClients), icon: UsersRound, color: "" },
-              { label: "Active Projects", value: cn(satisfaction.activeProjects), icon: FolderKanban, color: "" },
-              { label: "Open Tickets", value: cn(satisfaction.openTickets), icon: Ticket, color: "text-amber-600" },
-              { label: "Resolved Tickets", value: cn(satisfaction.resolvedTickets), icon: Ticket, color: "text-green-600" },
-              { label: "Satisfaction Score", value: `${satisfaction.satisfactionScore}%`, icon: SmilePlus, color: "text-green-600" },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className={c.color || "text-indigo-700"} size={18} />
-                  <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
-                  <p className={`mt-0.5 md:mt-1 text-xl md:text-2xl font-black ${c.color || "text-slate-900"}`}>{c.value}</p>
-                </div>
-              );
-            })}
+      {/* ─── Reports Tab ─── */}
+      {tab === "reports" && (
+        <div className="grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
+          <div className="rounded-2xl border bg-white p-6">
+            <div className="flex items-center gap-2">
+              <GitCompare className="text-indigo-700" />
+              <h2 className="text-xl font-black">Generate Report</h2>
+            </div>
+            <div className="mt-5 space-y-3">
+              <input className={input} value={reportForm.title} onChange={e => setReportForm({ ...reportForm, title: e.target.value })} placeholder="Report title" />
+              <select className={select} value={reportForm.dataSource} onChange={e => setReportForm({ ...reportForm, dataSource: e.target.value })}>
+                <option value="projects">Projects</option>
+                <option value="tasks">Tasks</option>
+                <option value="finance">Finance / Commercial</option>
+                <option value="crm">CRM</option>
+                <option value="attendance">Attendance</option>
+              </select>
+              <textarea className={input} value={reportForm.description} onChange={e => setReportForm({ ...reportForm, description: e.target.value })} placeholder="Description (optional)" rows={2} />
+              <input className={input} value={reportForm.filters} onChange={e => setReportForm({ ...reportForm, filters: e.target.value })} placeholder='Filters JSON (e.g. {"from":"2026-01-01","to":"2026-12-31"})' />
+              <button disabled={busy} onClick={generateReport} className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-3 text-sm font-black text-white">Generate Report</button>
+            </div>
+            {reportSnapshot && (
+              <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                <p className="text-xs font-black uppercase text-slate-400">Snapshot Preview</p>
+                <pre className="mt-2 overflow-auto text-xs font-semibold text-slate-700">{JSON.stringify(reportSnapshot, null, 2)}</pre>
+              </div>
+            )}
           </div>
+          <div className="space-y-3">
+            {reports.length === 0 && <div className="rounded-2xl border bg-white p-8 text-center font-bold text-slate-400">No reports yet.</div>}
+            {reports.map(r => (
+              <article key={r.id} className="rounded-2xl border bg-white p-5">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">{r.dataSource}</span>
+                      <span className="text-xs font-bold text-slate-400">{new Date(r.generatedAt).toLocaleDateString()}</span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black">{r.title}</h3>
+                    {r.description && <p className="mt-1 text-sm font-semibold text-slate-500">{r.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => deleteReport(r.id)} className="rounded-xl border p-2.5 text-red-600"><Trash2 size={17} /></button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── KPIs Tab ─── */}
+      {tab === "kpis" && (
+        <div className="space-y-6">
+          <section className="rounded-2xl border bg-white p-6">
+            <div className="flex items-center gap-2">
+              <Plus className="text-emerald-700" />
+              <h2 className="text-xl font-black">New KPI</h2>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <input className={input} value={kpiForm.name} onChange={e => setKpiForm({ ...kpiForm, name: e.target.value })} placeholder="KPI name" />
+              <select className={select} value={kpiForm.category} onChange={e => setKpiForm({ ...kpiForm, category: e.target.value })}>
+                <option value="general">General</option>
+                <option value="financial">Financial</option>
+                <option value="project">Project</option>
+                <option value="sales">Sales</option>
+                <option value="hr">HR</option>
+                <option value="marketing">Marketing</option>
+              </select>
+              <select className={select} value={kpiForm.unit} onChange={e => setKpiForm({ ...kpiForm, unit: e.target.value })}>
+                <option value="">No unit</option>
+                <option value="count">Count</option>
+                <option value="percentage">Percentage</option>
+                <option value="currency">Currency</option>
+                <option value="hours">Hours</option>
+              </select>
+              <input className={input} type="number" value={kpiForm.targetValue} onChange={e => setKpiForm({ ...kpiForm, targetValue: e.target.value })} placeholder="Target value" />
+              <select className={select} value={kpiForm.targetType} onChange={e => setKpiForm({ ...kpiForm, targetType: e.target.value })}>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+              <textarea className={input} value={kpiForm.description} onChange={e => setKpiForm({ ...kpiForm, description: e.target.value })} placeholder="Description (optional)" rows={1} />
+            </div>
+            <button disabled={busy} onClick={createKpi} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white">Create KPI</button>
+          </section>
+
+          <section className="space-y-3">
+            {kpis.length === 0 && <div className="rounded-2xl border bg-white p-8 text-center font-bold text-slate-400">No KPIs defined yet.</div>}
+            {kpis.map(k => (
+              <article key={k.id} className="rounded-2xl border bg-white p-5">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{k.category}</span>
+                      <span className="text-xs font-bold text-slate-400">{k.targetType} target: {k.targetValue}{kpiUnit(k.unit)}</span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black">{k.name}</h3>
+                    {k.description && <p className="mt-1 text-sm font-semibold text-slate-500">{k.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {k._count && k._count.results > 0 && (
+                      <button onClick={() => loadKpiResults(k.id)} className="rounded-xl border px-3 py-2 text-xs font-black">
+                        {k._count.results} results
+                      </button>
+                    )}
+                    <button onClick={() => { setKpiResultForm({ ...kpiResultForm, kpiDefinitionId: k.id }); if (selectedKpiForResults !== k.id) loadKpiResults(k.id); }} className="rounded-xl border px-3 py-2 text-xs font-black text-emerald-700">+ Result</button>
+                    <button onClick={() => deleteKpi(k.id)} className="rounded-xl border p-2.5 text-red-600"><Trash2 size={17} /></button>
+                  </div>
+                </div>
+                {selectedKpiForResults === k.id && (
+                  <div className="mt-4 border-t pt-4">
+                    <div className="grid gap-3 md:grid-cols-5">
+                      <input className={input} type="number" value={kpiResultForm.kpiDefinitionId === k.id ? kpiResultForm.actualValue : ""} onChange={e => setKpiResultForm({ ...kpiResultForm, kpiDefinitionId: k.id, actualValue: e.target.value })} placeholder="Actual value" />
+                      <input className={input} type="date" value={kpiResultForm.periodStart} onChange={e => setKpiResultForm({ ...kpiResultForm, periodStart: e.target.value })} />
+                      <input className={input} type="date" value={kpiResultForm.periodEnd} onChange={e => setKpiResultForm({ ...kpiResultForm, periodEnd: e.target.value })} />
+                      <input className={input} value={kpiResultForm.notes} onChange={e => setKpiResultForm({ ...kpiResultForm, notes: e.target.value })} placeholder="Notes" />
+                      <button disabled={busy} onClick={recordKpiResult} className="rounded-xl bg-emerald-700 px-3 py-2 text-xs font-black text-white">Record</button>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {kpiResults.map(r => (
+                        <div key={r.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-lg font-black ${kpiColor(r.actualValue, r.kpiDefinition?.targetValue || 0)}`}>{r.actualValue}{kpiUnit(r.kpiDefinition?.unit || null)}</span>
+                            <span className="text-sm font-semibold text-slate-500">{new Date(r.periodStart).toLocaleDateString()} - {new Date(r.periodEnd).toLocaleDateString()}</span>
+                            {r.notes && <span className="text-xs font-semibold text-slate-400">{r.notes}</span>}
+                          </div>
+                          <button onClick={() => deleteKpiResult(r.id)} className="text-red-600"><Trash2 size={15} /></button>
+                        </div>
+                      ))}
+                      {kpiResults.length === 0 && <p className="text-sm font-semibold text-slate-400">No results recorded yet.</p>}
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))}
+          </section>
         </div>
       )}
     </div>

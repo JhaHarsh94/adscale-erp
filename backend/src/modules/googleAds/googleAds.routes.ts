@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { protect, allowRoles } from "../../middlewares/auth.middleware";
 import {
-  createAccount, createCampaign, createReport, deleteAccount, deleteCampaign,
-  deleteMetric, deleteReport, getAccount, getCampaign, getDashboard,
-  getProjectsWithoutAds, listAccounts, listCampaigns, listMetrics, listReports,
-  updateAccount, updateCampaign, upsertMetric,
+  createAccount, createCampaign, createKeyword, createReport,
+  deleteAccount, deleteCampaign, deleteKeyword, deleteMetric, deleteReport,
+  getAccount, getCampaign, getDashboard, getKeyword,
+  getProjectsWithoutAds, listAccounts, listCampaigns, listKeywords,
+  listMetrics, listReports, updateAccount, updateCampaign, updateKeyword, upsertMetric,
 } from "./googleAds.controller";
 
 const router = Router();
@@ -28,6 +29,12 @@ router.get("/campaigns/:id", getCampaign);
 router.post("/campaigns", createCampaign);
 router.put("/campaigns/:id", updateCampaign);
 router.delete("/campaigns/:id", deleteCampaign);
+
+router.get("/keywords", listKeywords);
+router.get("/keywords/:id", getKeyword);
+router.post("/keywords", createKeyword);
+router.put("/keywords/:id", updateKeyword);
+router.delete("/keywords/:id", deleteKeyword);
 
 router.get("/metrics", listMetrics);
 router.post("/metrics", upsertMetric);

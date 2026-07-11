@@ -45,6 +45,9 @@ const recruitment_routes_1 = __importDefault(require("./modules/recruitment/recr
 const clientPortal_routes_1 = __importDefault(require("./modules/clientPortal/clientPortal.routes"));
 const seo_routes_1 = __importDefault(require("./modules/seo/seo.routes"));
 const socialMedia_routes_1 = __importDefault(require("./modules/socialMedia/socialMedia.routes"));
+const googleAds_routes_1 = __importDefault(require("./modules/googleAds/googleAds.routes"));
+const metaAds_routes_1 = __importDefault(require("./modules/metaAds/metaAds.routes"));
+const analytics_routes_1 = __importDefault(require("./modules/analytics/analytics.routes"));
 const sheetPoller_1 = require("./services/sheetPoller");
 dotenv_1.default.config();
 process.on("uncaughtException", (err) => {
@@ -176,6 +179,9 @@ app.use("/api/recruitment", recruitment_routes_1.default);
 app.use("/api/client-portal", clientPortal_routes_1.default);
 app.use("/api/seo", seo_routes_1.default);
 app.use("/api/social-media", socialMedia_routes_1.default);
+app.use("/api/google-ads", googleAds_routes_1.default);
+app.use("/api/meta-ads", metaAds_routes_1.default);
+app.use("/api/analytics", analytics_routes_1.default);
 app.use(error_middleware_1.errorMiddleware);
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

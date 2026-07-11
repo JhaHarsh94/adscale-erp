@@ -41,7 +41,6 @@ import seoRoutes from "./modules/seo/seo.routes";
 import socialMediaRoutes from "./modules/socialMedia/socialMedia.routes";
 import googleAdsRoutes from "./modules/googleAds/googleAds.routes";
 import metaAdsRoutes from "./modules/metaAds/metaAds.routes";
-import financeRoutes from "./modules/finance/finance.routes";
 import analyticsRoutes from "./modules/analytics/analytics.routes";
 import { startSheetPoller } from "./services/sheetPoller";
 
@@ -202,7 +201,6 @@ app.use("/api/seo", seoRoutes);
 app.use("/api/social-media", socialMediaRoutes);
 app.use("/api/google-ads", googleAdsRoutes);
 app.use("/api/meta-ads", metaAdsRoutes);
-app.use("/api/finance", financeRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use(errorMiddleware);
 

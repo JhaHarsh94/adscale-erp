@@ -32,13 +32,13 @@
 - [x] Phase 17 - Knowledge Base (SOPs, training, HR policies)
 - [x] Phase 18 - HRMS (performance, appraisals, promotions, warnings, HR notes, employee lifecycle)
 - [x] Phase 19 - Payroll (salary structure, components, attendance-based calc, bonuses/incentives, payslip PDF, approve/cancel)
-- [ ] Phase 20 - Recruitment Module (job openings, applicants)
-- [ ] Phase 21 - Client Portal (separate client dashboard)
-- [ ] Phase 22 - SEO Management
-- [ ] Phase 23 - Social Media Management
-- [ ] Phase 24 - Google Ads Management
-- [ ] Phase 25 - Meta Ads Management
-- [ ] Phase 26 - Finance & Billing
+- [x] Phase 20 - Recruitment Module (job openings, applicants, interviews, offer letters)
+- [x] Phase 21 - Client Portal (separate client dashboard with projects, tickets, files, approvals)
+- [x] Phase 22 - SEO Management (keywords, rankings, audits, backlinks)
+- [x] Phase 23 - Social Media Management (content calendar, posts, approvals)
+- [x] Phase 24 - Google Ads Management (campaigns, keywords, metrics, reports)
+- [x] Phase 25 - Meta Ads Management (campaigns, ad sets, ads, metrics, reports)
+- [x] Phase 26 - Finance & Billing (commercial documents, proposals, quotations, contracts, invoices)
 - [ ] Phase 27 - Analytics Center
 - [ ] Phase 28 - Mobile App (React Native / Flutter)
 - [ ] Phase 29 - Automation Engine

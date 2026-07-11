@@ -1,62 +1,66 @@
 import { Router } from "express";
 import { protect, allowRoles } from "../../middlewares/auth.middleware";
 import {
-  getCeoDashboard,
-  getRevenueAnalytics,
-  getEmployeeAnalytics,
-  getProjectAnalytics,
-  getTicketAnalytics,
-  getAttendanceAnalytics,
-  getLeadAnalytics,
-  getProductivityAnalytics,
-  getDepartmentPerformance,
-  getClientSatisfaction,
-  listSnapshots,
-  createSnapshot,
-  listKpis,
+  createDashboard,
   createKpi,
-  updateKpi,
-  deleteKpi,
-  listWidgets,
   createWidget,
-  updateWidget,
+  deleteDashboard,
+  deleteKpi,
+  deleteKpiResult,
+  deleteReport,
   deleteWidget,
-  listReportExports,
-  createReportExport,
+  generateReport,
+  getAnalyticsDashboard,
+  getDashboard,
+  getKpi,
+  getProjectsWithoutAnalytics,
+  getReport,
+  listDashboards,
+  listKpis,
+  listKpiResults,
+  listReports,
+  listWidgets,
+  recordKpiResult,
+  updateDashboard,
+  updateKpi,
+  updateWidget,
 } from "./analytics.controller";
 
 const router = Router();
 
-const roles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER", "HR"];
+const analyticsRoles = ["SUPER_ADMIN", "DIRECTOR", "OPERATIONS_MANAGER", "SALES_MANAGER", "HR"];
 
 router.use(protect);
-router.use(allowRoles(...roles));
+router.use(allowRoles(...analyticsRoles));
 
-router.get("/ceo-dashboard", getCeoDashboard);
-router.get("/revenue", getRevenueAnalytics);
-router.get("/employees", getEmployeeAnalytics);
-router.get("/projects", getProjectAnalytics);
-router.get("/tickets", getTicketAnalytics);
-router.get("/attendance", getAttendanceAnalytics);
-router.get("/leads", getLeadAnalytics);
-router.get("/productivity", getProductivityAnalytics);
-router.get("/departments", getDepartmentPerformance);
-router.get("/client-satisfaction", getClientSatisfaction);
+router.get("/dashboard", getAnalyticsDashboard);
 
-router.get("/snapshots", listSnapshots);
-router.post("/snapshots", createSnapshot);
-
-router.get("/kpis", listKpis);
-router.post("/kpis", createKpi);
-router.put("/kpis/:id", updateKpi);
-router.delete("/kpis/:id", deleteKpi);
+router.get("/dashboards", listDashboards);
+router.get("/dashboards/:id", getDashboard);
+router.post("/dashboards", createDashboard);
+router.put("/dashboards/:id", updateDashboard);
+router.delete("/dashboards/:id", deleteDashboard);
 
 router.get("/widgets", listWidgets);
 router.post("/widgets", createWidget);
 router.put("/widgets/:id", updateWidget);
 router.delete("/widgets/:id", deleteWidget);
 
-router.get("/reports", listReportExports);
-router.post("/reports", createReportExport);
+router.get("/reports", listReports);
+router.get("/reports/:id", getReport);
+router.post("/reports/generate", generateReport);
+router.delete("/reports/:id", deleteReport);
+
+router.get("/kpis", listKpis);
+router.get("/kpis/:id", getKpi);
+router.post("/kpis", createKpi);
+router.put("/kpis/:id", updateKpi);
+router.delete("/kpis/:id", deleteKpi);
+
+router.get("/kpi-results", listKpiResults);
+router.post("/kpi-results", recordKpiResult);
+router.delete("/kpi-results/:id", deleteKpiResult);
+
+router.get("/projects", getProjectsWithoutAnalytics);
 
 export default router;

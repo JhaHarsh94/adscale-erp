@@ -42,7 +42,6 @@ import SocialMediaPage from "./pages/SocialMediaPage";
 import LeadStudioPage from "./pages/LeadStudioPage";
 import GoogleAdsPage from "./pages/GoogleAdsPage";
 import MetaAdsPage from "./pages/MetaAdsPage";
-import FinancePage from "./pages/FinancePage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
@@ -103,7 +102,6 @@ function App() {
           <Route path="/lead-studio" element={<LeadStudioPage />} />
           <Route path="/google-ads" element={<GoogleAdsPage />} />
           <Route path="/meta-ads" element={<MetaAdsPage />} />
-          <Route path="/finance" element={<FinancePage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           </Route>
         </Route>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Search, TrendingUp, Globe, BarChart3, Plus, Trash2, Save, RefreshCcw, XCircle, DollarSign, MousePointerClick, Eye, Target, Wallet } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Plus, Trash2, Save, RefreshCcw, XCircle, DollarSign, MousePointerClick, Eye, Target, Wallet, Key } from "lucide-react";
 import { apiClient } from "../api/client";
-import type { GoogleAdsDashboard, GoogleAdsAccount, GoogleAdsCampaign, GoogleAdsReport } from "../types/googleAds";
+import type { GoogleAdsDashboard, GoogleAdsAccount, GoogleAdsCampaign, GoogleAdsKeyword, GoogleAdsReport } from "../types/googleAds";
 
 const f = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500";
 
@@ -9,11 +9,12 @@ const tabs = [
   { key: "dashboard", label: "Dashboard", icon: BarChart3 },
   { key: "accounts", label: "Accounts", icon: Globe },
   { key: "campaigns", label: "Campaigns", icon: TrendingUp },
+  { key: "keywords", label: "Keywords", icon: Key },
   { key: "reports", label: "Reports", icon: Wallet },
 ];
 
 function inr(n: number) {
-  return "₹" + n.toLocaleString("en-IN");
+  return "\u20B9" + n.toLocaleString("en-IN");
 }
 
 export default function GoogleAdsPage() {
@@ -27,14 +28,18 @@ export default function GoogleAdsPage() {
   const [accountForm, setAccountForm] = useState({ projectId: "", accountName: "", accountId: "", currency: "INR", timezone: "Asia/Kolkata" });
   const [campaigns, setCampaigns] = useState<GoogleAdsCampaign[]>([]);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
-  const [campaignForm, setCampaignForm] = useState({ accountId: "", campaignName: "", campaignId: "", status: "ACTIVE", dailyBudget: "", startDate: "", endDate: "" });
+  const [campaignForm, setCampaignForm] = useState({ accountId: "", campaignName: "", campaignId: "", campaignType: "SEARCH", status: "ACTIVE", dailyBudget: "", lifetimeBudget: "", startDate: "", endDate: "", targetCpa: "", targetRoas: "" });
+  const [keywords, setKeywords] = useState<GoogleAdsKeyword[]>([]);
+  const [showKeywordForm, setShowKeywordForm] = useState(false);
+  const [keywordForm, setKeywordForm] = useState({ campaignId: "", accountId: "", keyword: "", matchType: "PHRASE", bidAmount: "", qualityScore: "", status: "ENABLED" });
   const [showMetricForm, setShowMetricForm] = useState(false);
-  const [metricForm, setMetricForm] = useState({ campaignId: "", date: "", impressions: "", clicks: "", cost: "", conversions: "", conversionValue: "" });
+  const [metricForm, setMetricForm] = useState({ campaignId: "", date: "", impressions: "", clicks: "", cost: "", conversions: "", conversionValue: "", ctr: "", cpc: "", cpa: "", roas: "", averagePosition: "" });
   const [reports, setReports] = useState<GoogleAdsReport[]>([]);
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportForm, setReportForm] = useState({ accountId: "", title: "", periodStart: "", periodEnd: "", summary: "" });
   const [search, setSearch] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
+  const [filterCampaign, setFilterCampaign] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
   function msgOk(s: string) { setMsg(s); setTimeout(() => setMsg(""), 3000); }
@@ -55,11 +60,22 @@ export default function GoogleAdsPage() {
       setCampaigns(res.data.data || []);
     } catch {}
   }
+  async function loadKeywords() {
+    try {
+      const params: Record<string, string> = {};
+      if (filterCampaign) params.campaignId = filterCampaign;
+      if (filterAccount) params.accountId = filterAccount;
+      if (filterStatus) params.status = filterStatus;
+      const res = await apiClient.get("/google-ads/keywords", { params });
+      setKeywords(res.data.data || []);
+    } catch {}
+  }
   async function loadReports() { try { const res = await apiClient.get("/google-ads/reports"); setReports(res.data.data || []); } catch {} }
 
   useEffect(() => { if (tab === "dashboard") loadDashboard(); }, [tab]);
   useEffect(() => { if (tab === "accounts") { loadAccounts(); loadAvailProjects(); } }, [tab]);
   useEffect(() => { if (tab === "campaigns") { loadCampaigns(); loadAccounts(); } }, [tab, filterAccount, filterStatus]);
+  useEffect(() => { if (tab === "keywords") { loadKeywords(); loadAccounts(); loadCampaigns(); } }, [tab, filterAccount, filterCampaign, filterStatus]);
   useEffect(() => { if (tab === "reports") { loadReports(); loadAccounts(); } }, [tab]);
 
   async function createAccount() {
@@ -78,18 +94,29 @@ export default function GoogleAdsPage() {
     try {
       await apiClient.post("/google-ads/campaigns", campaignForm);
       msgOk("Campaign created"); setShowCampaignForm(false);
-      setCampaignForm({ accountId: "", campaignName: "", campaignId: "", status: "ACTIVE", dailyBudget: "", startDate: "", endDate: "" });
+      setCampaignForm({ accountId: "", campaignName: "", campaignId: "", campaignType: "SEARCH", status: "ACTIVE", dailyBudget: "", lifetimeBudget: "", startDate: "", endDate: "", targetCpa: "", targetRoas: "" });
       loadCampaigns();
     } catch { setMsg("Failed"); }
   }
   async function deleteCampaign(id: string) { try { await apiClient.delete(`/google-ads/campaigns/${id}`); msgOk("Deleted"); loadCampaigns(); } catch { setMsg("Failed"); } }
+
+  async function createKeyword() {
+    if (!keywordForm.campaignId || !keywordForm.accountId || !keywordForm.keyword) { setMsg("Campaign, account, and keyword required"); return; }
+    try {
+      await apiClient.post("/google-ads/keywords", keywordForm);
+      msgOk("Keyword created"); setShowKeywordForm(false);
+      setKeywordForm({ campaignId: "", accountId: "", keyword: "", matchType: "PHRASE", bidAmount: "", qualityScore: "", status: "ENABLED" });
+      loadKeywords();
+    } catch { setMsg("Failed"); }
+  }
+  async function deleteKeyword(id: string) { try { await apiClient.delete(`/google-ads/keywords/${id}`); msgOk("Deleted"); loadKeywords(); } catch { setMsg("Failed"); } }
 
   async function upsertMetric() {
     if (!metricForm.campaignId || !metricForm.date) { setMsg("Campaign and date required"); return; }
     try {
       await apiClient.post("/google-ads/metrics", metricForm);
       msgOk("Metric saved"); setShowMetricForm(false);
-      setMetricForm({ campaignId: "", date: "", impressions: "", clicks: "", cost: "", conversions: "", conversionValue: "" });
+      setMetricForm({ campaignId: "", date: "", impressions: "", clicks: "", cost: "", conversions: "", conversionValue: "", ctr: "", cpc: "", cpa: "", roas: "", averagePosition: "" });
     } catch { setMsg("Failed"); }
   }
 
@@ -106,21 +133,21 @@ export default function GoogleAdsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <section className="rounded-[2rem] bg-gradient-to-br from-blue-700 via-blue-800 to-slate-950 p-6 md:p-8 text-white">
+      <section className="rounded-[2rem] bg-gradient-to-br from-emerald-700 via-emerald-800 to-slate-950 p-6 md:p-8 text-white">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[.28em] text-blue-200">Phase 24</p>
+            <p className="text-xs font-black uppercase tracking-[.28em] text-emerald-200">Phase 24</p>
             <h1 className="mt-3 text-2xl md:text-4xl font-black">Google Ads Management</h1>
-            <p className="mt-2 text-xs md:text-sm text-blue-100">Campaign tracking, budget management & performance metrics.</p>
+            <p className="mt-2 text-xs md:text-sm text-emerald-100">Campaign, keyword, and performance tracking with CPC, CPA, and ROAS metrics.</p>
           </div>
           <button onClick={() => { if (tab === "dashboard") loadDashboard(); }} className="rounded-xl bg-white/10 p-2.5 md:p-3"><RefreshCcw size={18} /></button>
         </div>
       </section>
 
       {msg && (
-        <div className="rounded-xl bg-blue-50 p-3 md:p-4 text-xs md:text-sm font-bold text-blue-800 flex items-center justify-between">
+        <div className="rounded-xl bg-emerald-50 p-3 md:p-4 text-xs md:text-sm font-bold text-emerald-800 flex items-center justify-between">
           <span>{msg}</span>
-          <button onClick={() => setMsg("")} className="text-blue-400 hover:text-blue-700"><XCircle size={16} /></button>
+          <button onClick={() => setMsg("")} className="text-emerald-400 hover:text-emerald-700"><XCircle size={16} /></button>
         </div>
       )}
 
@@ -128,7 +155,7 @@ export default function GoogleAdsPage() {
         {tabs.map((t) => {
           const Icon = t.icon;
           return (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-b-2 transition whitespace-nowrap ${tab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-slate-400 hover:text-slate-700"}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-b-2 transition whitespace-nowrap ${tab === t.key ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-400 hover:text-slate-700"}`}>
               <Icon size={14} />{t.label}
             </button>
           );
@@ -136,7 +163,7 @@ export default function GoogleAdsPage() {
       </div>
 
       {tab === "dashboard" && loading && (
-        <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" /></div>
+        <div className="flex justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" /></div>
       )}
       {tab === "dashboard" && !loading && dashboard && (
         <div className="space-y-6">
@@ -153,7 +180,7 @@ export default function GoogleAdsPage() {
               const Icon = c.icon;
               return (
                 <div key={c.label} className="rounded-2xl border bg-white p-3 md:p-4">
-                  <Icon className="text-blue-700" size={18} />
+                  <Icon className="text-emerald-700" size={18} />
                   <p className="mt-2 md:mt-3 text-[10px] md:text-xs font-black uppercase text-slate-400">{c.label}</p>
                   <p className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black text-slate-900">{c.value}</p>
                 </div>
@@ -185,11 +212,11 @@ export default function GoogleAdsPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-slate-500">{accounts.length} Google Ads account(s)</p>
-            <button onClick={() => { setShowAccountForm(!showAccountForm); if (!showAccountForm) loadAvailProjects(); }} className="flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />New Account</button>
+            <button onClick={() => { setShowAccountForm(!showAccountForm); if (!showAccountForm) loadAvailProjects(); }} className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />New Account</button>
           </div>
           {showAccountForm && (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-              <h3 className="font-black text-blue-800">Link Google Ads Account</h3>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 space-y-3">
+              <h3 className="font-black text-emerald-800">Link Google Ads Account</h3>
               <div className="grid gap-3 md:grid-cols-3">
                 <select className={f} value={accountForm.projectId} onChange={(e) => setAccountForm({ ...accountForm, projectId: e.target.value })}>
                   <option value="">Select project *</option>
@@ -202,14 +229,14 @@ export default function GoogleAdsPage() {
                 </select>
                 <input className={f} placeholder="Timezone" value={accountForm.timezone} onChange={(e) => setAccountForm({ ...accountForm, timezone: e.target.value })} />
               </div>
-              <button onClick={createAccount} className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Create</button>
+              <button onClick={createAccount} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Create</button>
             </div>
           )}
           {accounts.map((a) => (
             <div key={a.id} className="rounded-2xl border bg-white p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700"><Globe size={18} /></div>
+                  <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Globe size={18} /></div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-black text-slate-900">{a.accountName}</span>
@@ -219,6 +246,7 @@ export default function GoogleAdsPage() {
                     <p className="mt-1 text-xs font-semibold text-slate-500">{a.project.name} — {a.project.client.name}</p>
                     <div className="mt-1 flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
                       <span>{a._count?.campaigns || 0} campaigns</span>
+                      <span>{a._count?.keywords || 0} keywords</span>
                       <span>{a.timezone}</span>
                     </div>
                   </div>
@@ -246,11 +274,11 @@ export default function GoogleAdsPage() {
               <option value="">All status</option>
               {["ACTIVE", "PAUSED", "REMOVED", "ENDED"].map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            <button onClick={() => setShowCampaignForm(!showCampaignForm)} className="flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />New Campaign</button>
+            <button onClick={() => setShowCampaignForm(!showCampaignForm)} className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />New Campaign</button>
           </div>
           {showCampaignForm && (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-              <h3 className="font-black text-blue-800">Create Campaign</h3>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 space-y-3">
+              <h3 className="font-black text-emerald-800">Create Campaign</h3>
               <div className="grid gap-3 md:grid-cols-3">
                 <select className={f} value={campaignForm.accountId} onChange={(e) => setCampaignForm({ ...campaignForm, accountId: e.target.value })}>
                   <option value="">Select account *</option>
@@ -258,14 +286,20 @@ export default function GoogleAdsPage() {
                 </select>
                 <input className={f} placeholder="Campaign name *" value={campaignForm.campaignName} onChange={(e) => setCampaignForm({ ...campaignForm, campaignName: e.target.value })} />
                 <input className={f} placeholder="Campaign ID" value={campaignForm.campaignId} onChange={(e) => setCampaignForm({ ...campaignForm, campaignId: e.target.value })} />
+                <select className={f} value={campaignForm.campaignType} onChange={(e) => setCampaignForm({ ...campaignForm, campaignType: e.target.value })}>
+                  {["SEARCH", "DISPLAY", "SHOPPING", "VIDEO", "APP", "SMART", "PERFORMANCE_MAX"].map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
                 <select className={f} value={campaignForm.status} onChange={(e) => setCampaignForm({ ...campaignForm, status: e.target.value })}>
                   {["ACTIVE", "PAUSED", "REMOVED", "ENDED"].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <input className={f} type="number" placeholder="Daily budget" value={campaignForm.dailyBudget} onChange={(e) => setCampaignForm({ ...campaignForm, dailyBudget: e.target.value })} />
+                <input className={f} type="number" placeholder="Lifetime budget" value={campaignForm.lifetimeBudget} onChange={(e) => setCampaignForm({ ...campaignForm, lifetimeBudget: e.target.value })} />
+                <input className={f} type="number" placeholder="Target CPA" value={campaignForm.targetCpa} onChange={(e) => setCampaignForm({ ...campaignForm, targetCpa: e.target.value })} />
+                <input className={f} type="number" placeholder="Target ROAS" value={campaignForm.targetRoas} onChange={(e) => setCampaignForm({ ...campaignForm, targetRoas: e.target.value })} />
                 <input className={f} type="date" placeholder="Start date" value={campaignForm.startDate} onChange={(e) => setCampaignForm({ ...campaignForm, startDate: e.target.value })} />
                 <input className={f} type="date" placeholder="End date" value={campaignForm.endDate} onChange={(e) => setCampaignForm({ ...campaignForm, endDate: e.target.value })} />
               </div>
-              <button onClick={createCampaign} className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Create</button>
+              <button onClick={createCampaign} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Create</button>
             </div>
           )}
           <div className="space-y-2">
@@ -283,25 +317,29 @@ export default function GoogleAdsPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-black text-slate-900">{c.campaignName}</span>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${c.status === "ACTIVE" ? "bg-green-50 text-green-700" : c.status === "PAUSED" ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{c.status}</span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">{c.campaignType}</span>
                       </div>
                       <p className="mt-1 text-xs font-semibold text-slate-500">{c.account?.accountName} — {c.account?.project?.client?.name}</p>
                       <div className="mt-2 flex flex-wrap gap-3 text-[10px] font-semibold text-slate-400">
                         {c.dailyBudget && <span>Daily: {inr(c.dailyBudget)}</span>}
+                        {c.lifetimeBudget && <span>Lifetime: {inr(c.lifetimeBudget)}</span>}
+                        {c.targetCpa && <span>Target CPA: {inr(c.targetCpa)}</span>}
+                        {c.targetRoas && <span>Target ROAS: {c.targetRoas}x</span>}
                         {c.startDate && <span>Start: {new Date(c.startDate).toLocaleDateString()}</span>}
+                        {c._count && <span>{c._count.keywords} keywords</span>}
                         {aggMetrics && (
                           <>
                             <span><Eye size={12} className="inline mr-1" />{aggMetrics.impressions.toLocaleString("en-IN")}</span>
                             <span><MousePointerClick size={12} className="inline mr-1" />{aggMetrics.clicks.toLocaleString("en-IN")}</span>
                             <span><DollarSign size={12} className="inline mr-1" />{inr(aggMetrics.cost)}</span>
                             <span><Target size={12} className="inline mr-1" />{aggMetrics.conversions}</span>
-                            {aggMetrics.clicks > 0 && <span>CPC: {inr(aggMetrics.cost / aggMetrics.clicks)}</span>}
                           </>
                         )}
                         {c._count && <span>{c._count.metrics} metric entries</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => { setMetricForm({ ...metricForm, campaignId: c.id, date: new Date().toISOString().slice(0, 10) }); setShowMetricForm(true); }} className="rounded-lg bg-blue-50 p-1.5 text-blue-600 hover:bg-blue-100"><BarChart3 size={14} /></button>
+                      <button onClick={() => { setMetricForm({ ...metricForm, campaignId: c.id, date: new Date().toISOString().slice(0, 10) }); setShowMetricForm(true); }} className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 hover:bg-emerald-100"><BarChart3 size={14} /></button>
                       <button onClick={() => deleteCampaign(c.id)} className="rounded-lg bg-red-50 p-1.5 text-red-500 hover:bg-red-100"><Trash2 size={14} /></button>
                     </div>
                   </div>
@@ -310,20 +348,99 @@ export default function GoogleAdsPage() {
             })}
             {campaigns.length === 0 && <p className="py-8 text-center text-sm font-bold text-slate-400">No campaigns yet</p>}
           </div>
-          {showMetricForm && (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-              <h3 className="font-black text-blue-800">Log Daily Metric</h3>
-              <div className="grid gap-3 md:grid-cols-4">
-                <input className={f} type="date" value={metricForm.date} onChange={(e) => setMetricForm({ ...metricForm, date: e.target.value })} />
-                <input className={f} type="number" placeholder="Impressions" value={metricForm.impressions} onChange={(e) => setMetricForm({ ...metricForm, impressions: e.target.value })} />
-                <input className={f} type="number" placeholder="Clicks" value={metricForm.clicks} onChange={(e) => setMetricForm({ ...metricForm, clicks: e.target.value })} />
-                <input className={f} type="number" placeholder="Cost" value={metricForm.cost} onChange={(e) => setMetricForm({ ...metricForm, cost: e.target.value })} />
-                <input className={f} type="number" placeholder="Conversions" value={metricForm.conversions} onChange={(e) => setMetricForm({ ...metricForm, conversions: e.target.value })} />
-                <input className={f} type="number" placeholder="Conv. value" value={metricForm.conversionValue} onChange={(e) => setMetricForm({ ...metricForm, conversionValue: e.target.value })} />
+        </div>
+      )}
+
+      {tab === "keywords" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-bold text-slate-500">{keywords.length} keyword(s)</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select className={f + " max-w-[180px]"} value={filterAccount} onChange={(e) => setFilterAccount(e.target.value)}>
+                <option value="">All accounts</option>
+                {accounts.map((a) => <option key={a.id} value={a.id}>{a.accountName}</option>)}
+              </select>
+              <select className={f + " max-w-[180px]"} value={filterCampaign} onChange={(e) => setFilterCampaign(e.target.value)}>
+                <option value="">All campaigns</option>
+                {campaigns.map((c) => <option key={c.id} value={c.id}>{c.campaignName}</option>)}
+              </select>
+              <select className={f + " max-w-[150px]"} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                <option value="">All status</option>
+                {["ENABLED", "PAUSED", "REMOVED"].map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <button onClick={() => setShowKeywordForm(!showKeywordForm)} className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />New Keyword</button>
+            </div>
+          </div>
+          {showKeywordForm && (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 space-y-3">
+              <h3 className="font-black text-emerald-800">Add Keyword</h3>
+              <div className="grid gap-3 md:grid-cols-3">
+                <select className={f} value={keywordForm.campaignId} onChange={(e) => setKeywordForm({ ...keywordForm, campaignId: e.target.value })}>
+                  <option value="">Select campaign *</option>
+                  {campaigns.map((c) => <option key={c.id} value={c.id}>{c.campaignName}</option>)}
+                </select>
+                <select className={f} value={keywordForm.accountId} onChange={(e) => setKeywordForm({ ...keywordForm, accountId: e.target.value })}>
+                  <option value="">Select account *</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.accountName}</option>)}
+                </select>
+                <input className={f} placeholder="Keyword *" value={keywordForm.keyword} onChange={(e) => setKeywordForm({ ...keywordForm, keyword: e.target.value })} />
+                <select className={f} value={keywordForm.matchType} onChange={(e) => setKeywordForm({ ...keywordForm, matchType: e.target.value })}>
+                  {["EXACT", "PHRASE", "BROAD"].map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input className={f} type="number" placeholder="Bid amount" value={keywordForm.bidAmount} onChange={(e) => setKeywordForm({ ...keywordForm, bidAmount: e.target.value })} />
+                <input className={f} type="number" placeholder="Quality score (1-10)" value={keywordForm.qualityScore} onChange={(e) => setKeywordForm({ ...keywordForm, qualityScore: e.target.value })} />
+                <select className={f} value={keywordForm.status} onChange={(e) => setKeywordForm({ ...keywordForm, status: e.target.value })}>
+                  {["ENABLED", "PAUSED", "REMOVED"].map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
-              <button onClick={upsertMetric} className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Save</button>
+              <button onClick={createKeyword} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Create</button>
             </div>
           )}
+          <div className="space-y-2">
+            {keywords.map((kw) => (
+              <div key={kw.id} className="rounded-2xl border bg-white p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Key size={18} /></div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-slate-900">{kw.keyword}</span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">{kw.matchType}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kw.status === "ENABLED" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>{kw.status}</span>
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">{kw.campaign?.campaignName} — {kw.account?.accountName}</p>
+                      <div className="mt-1 flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
+                        {kw.bidAmount !== null && <span>Bid: {inr(kw.bidAmount)}</span>}
+                        {kw.qualityScore !== null && <span>QS: {kw.qualityScore}/10</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => deleteKeyword(kw.id)} className="rounded-lg bg-red-50 p-1.5 text-red-500 hover:bg-red-100"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+            {keywords.length === 0 && <p className="py-8 text-center text-sm font-bold text-slate-400">No keywords added yet</p>}
+          </div>
+        </div>
+      )}
+
+      {showMetricForm && (
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 space-y-3">
+          <h3 className="font-black text-emerald-800">Log Daily Metric</h3>
+          <div className="grid gap-3 md:grid-cols-4">
+            <input className={f} type="date" value={metricForm.date} onChange={(e) => setMetricForm({ ...metricForm, date: e.target.value })} />
+            <input className={f} type="number" placeholder="Impressions" value={metricForm.impressions} onChange={(e) => setMetricForm({ ...metricForm, impressions: e.target.value })} />
+            <input className={f} type="number" placeholder="Clicks" value={metricForm.clicks} onChange={(e) => setMetricForm({ ...metricForm, clicks: e.target.value })} />
+            <input className={f} type="number" placeholder="Cost" value={metricForm.cost} onChange={(e) => setMetricForm({ ...metricForm, cost: e.target.value })} />
+            <input className={f} type="number" placeholder="Conversions" value={metricForm.conversions} onChange={(e) => setMetricForm({ ...metricForm, conversions: e.target.value })} />
+            <input className={f} type="number" placeholder="Conv. value" value={metricForm.conversionValue} onChange={(e) => setMetricForm({ ...metricForm, conversionValue: e.target.value })} />
+            <input className={f} type="number" step="0.01" placeholder="CTR %" value={metricForm.ctr} onChange={(e) => setMetricForm({ ...metricForm, ctr: e.target.value })} />
+            <input className={f} type="number" step="0.01" placeholder="CPC" value={metricForm.cpc} onChange={(e) => setMetricForm({ ...metricForm, cpc: e.target.value })} />
+            <input className={f} type="number" step="0.01" placeholder="CPA" value={metricForm.cpa} onChange={(e) => setMetricForm({ ...metricForm, cpa: e.target.value })} />
+            <input className={f} type="number" step="0.01" placeholder="ROAS" value={metricForm.roas} onChange={(e) => setMetricForm({ ...metricForm, roas: e.target.value })} />
+            <input className={f} type="number" step="0.01" placeholder="Avg. position" value={metricForm.averagePosition} onChange={(e) => setMetricForm({ ...metricForm, averagePosition: e.target.value })} />
+          </div>
+          <button onClick={upsertMetric} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Save</button>
         </div>
       )}
 
@@ -331,11 +448,11 @@ export default function GoogleAdsPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-slate-500">{reports.length} report(s)</p>
-            <button onClick={() => setShowReportForm(!showReportForm)} className="flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />Generate Report</button>
+            <button onClick={() => setShowReportForm(!showReportForm)} className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white"><Plus size={16} />Generate Report</button>
           </div>
           {showReportForm && (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-              <h3 className="font-black text-blue-800">Generate Report</h3>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 space-y-3">
+              <h3 className="font-black text-emerald-800">Generate Report</h3>
               <div className="grid gap-3 md:grid-cols-3">
                 <select className={f} value={reportForm.accountId} onChange={(e) => setReportForm({ ...reportForm, accountId: e.target.value })}>
                   <option value="">Select account *</option>
@@ -346,7 +463,7 @@ export default function GoogleAdsPage() {
                 <input className={f} type="date" placeholder="Period end" value={reportForm.periodEnd} onChange={(e) => setReportForm({ ...reportForm, periodEnd: e.target.value })} />
                 <textarea className={`${f} md:col-span-3 min-h-[60px]`} placeholder="Summary (auto-calculated from metrics)" value={reportForm.summary} onChange={(e) => setReportForm({ ...reportForm, summary: e.target.value })} />
               </div>
-              <button onClick={createReport} className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Generate</button>
+              <button onClick={createReport} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white"><Save size={16} className="inline mr-1" />Generate</button>
             </div>
           )}
           <div className="overflow-x-auto rounded-2xl border bg-white">
@@ -360,6 +477,9 @@ export default function GoogleAdsPage() {
                   <th className="px-4 py-3">Clicks</th>
                   <th className="px-4 py-3">Cost</th>
                   <th className="px-4 py-3">Conversions</th>
+                  <th className="px-4 py-3">CPC</th>
+                  <th className="px-4 py-3">CPA</th>
+                  <th className="px-4 py-3">ROAS</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -367,17 +487,20 @@ export default function GoogleAdsPage() {
                 {reports.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-bold">{r.title}</td>
-                    <td className="px-4 py-3">{r.account?.accountName || "—"}</td>
-                    <td className="px-4 py-3">{r.periodStart ? `${new Date(r.periodStart).toLocaleDateString()} - ${r.periodEnd ? new Date(r.periodEnd).toLocaleDateString() : "now"}` : "—"}</td>
+                    <td className="px-4 py-3">{r.account?.accountName || "\u2014"}</td>
+                    <td className="px-4 py-3">{r.periodStart ? `${new Date(r.periodStart).toLocaleDateString()} - ${r.periodEnd ? new Date(r.periodEnd).toLocaleDateString() : "now"}` : "\u2014"}</td>
                     <td className="px-4 py-3">{r.totalImpressions.toLocaleString("en-IN")}</td>
                     <td className="px-4 py-3">{r.totalClicks.toLocaleString("en-IN")}</td>
                     <td className="px-4 py-3">{inr(r.totalCost)}</td>
                     <td className="px-4 py-3">{r.totalConversions}</td>
+                    <td className="px-4 py-3">{r.averageCpc !== null ? inr(r.averageCpc) : "\u2014"}</td>
+                    <td className="px-4 py-3">{r.averageCpa !== null ? inr(r.averageCpa) : "\u2014"}</td>
+                    <td className="px-4 py-3">{r.averageRoas !== null ? `${r.averageRoas.toFixed(2)}x` : "\u2014"}</td>
                     <td className="px-4 py-3"><button onClick={() => deleteReport(r.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button></td>
                   </tr>
                 ))}
                 {reports.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-sm font-bold text-slate-400">No reports generated</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-8 text-center text-sm font-bold text-slate-400">No reports generated</td></tr>
                 )}
               </tbody>
             </table>

@@ -1,4 +1,5 @@
 {
+  "rootDirectory": "frontend",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
@@ -6,5 +7,14 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "experimentalServices": {
+    "adscale-erp-backend": {
+      "type": "web",
+      "root": "backend",
+      "entrypoint": "src/server.ts",
+      "routePrefix": "/",
+      "buildCommand": "npm install && npx prisma generate && npm run build"
+    }
+  }
 }

@@ -2,7 +2,6 @@ import prisma from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { successResponse } from "../../utils/response";
-import type { AuthRequest } from "../../middlewares/auth.middleware";
 
 const GOOGLE_SUGGEST = "https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=in&q=";
 
@@ -189,7 +188,7 @@ export const createAudit = asyncHandler(async (req, res) => {
       passedChecks: passedChecks !== undefined ? Number(passedChecks) : null,
       warnings: warnings !== undefined ? Number(warnings) : null,
       summary: summary || null,
-      performedById: (req as AuthRequest).user?.id,
+      performedById: req.user?.id,
     },
   });
   return successResponse(res, 201, "Audit created", audit);

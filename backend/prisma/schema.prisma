@@ -484,12 +484,10 @@ model User {
   knowledgeViews        KnowledgeView[]
   createdJobs           JobOpening[]         @relation("JobCreatedBy")
   seoAudits             SeoAudit[]           @relation("SeoAuditPerformedBy")
-  createdInvoices       Invoice[]            @relation("InvoiceCreatedBy")
-  receivedPayments      Payment[]            @relation("PaymentReceivedBy")
-  expensesPaid          Expense[]            @relation("ExpensePaidBy")
-  vendorPaymentsPaid    VendorPayment[]      @relation("VendorPaymentPaidBy")
-  dashboardWidgets      DashboardWidget[]
-  reportExports         ReportExport[]
+  analyticsDashboards     AnalyticsDashboard[]
+  analyticsReportsGenerated AnalyticsReport[]
+  kpiDefinitionsCreated   KpiDefinition[]
+  kpiResultsRecorded      KpiResult[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -719,10 +717,6 @@ model Client {
   projects            Project[]
   tickets             Ticket[]
   clientUsers         ClientUser[]
-  invoices            Invoice[]
-  payments            Payment[]
-  receipts            Receipt[]
-  billableExpenses    Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -905,8 +899,7 @@ model Project {
   socialCalendars  SocialCalendar[]
   googleAdsAccounts GoogleAdsAccount[]
   metaAdsAccounts   MetaAdsAccount[]
-  invoices          Invoice[]
-  expenses          Expense[]
+  kpiDefinitions    KpiDefinition[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -2793,7 +2786,8 @@ model GoogleAdsAccount {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  campaigns GoogleAdsCampaign[]
+  campaigns  GoogleAdsCampaign[]
+  keywords   GoogleAdsKeyword[]
   reports    GoogleAdsReport[]
 
   @@unique([projectId, accountId])
@@ -2801,60 +2795,93 @@ model GoogleAdsAccount {
 }
 
 model GoogleAdsCampaign {
-  id            String   @id @default(uuid())
-  accountId     String
-  account       GoogleAdsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  campaignName  String
-  campaignId    String?
-  status        String   @default("ACTIVE")
-  dailyBudget   Float?
-  startDate     DateTime?
-  endDate       DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(uuid())
+  accountId      String
+  account        GoogleAdsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaignName   String
+  campaignId     String?
+  status         String   @default("ACTIVE")
+  campaignType   String   @default("SEARCH")
+  dailyBudget    Float?
+  lifetimeBudget Float?
+  startDate      DateTime?
+  endDate        DateTime?
+  targetCpa      Float?
+  targetRoas     Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  metrics GoogleAdsMetric[]
+  keywords GoogleAdsKeyword[]
+  metrics  GoogleAdsMetric[]
 
   @@index([accountId])
   @@map("google_ads_campaigns")
 }
 
-model GoogleAdsMetric {
-  id            String   @id @default(uuid())
-  campaignId    String
-  campaign      GoogleAdsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  date          DateTime
-  impressions   Int      @default(0)
-  clicks        Int      @default(0)
-  cost          Float    @default(0)
-  conversions   Int      @default(0)
-  conversionValue Float? @default(0)
-  ctr           Float?
-  cpc           Float?
-  cpa           Float?
-  roas          Float?
-  createdAt     DateTime @default(now())
+model GoogleAdsKeyword {
+  id              String   @id @default(uuid())
+  campaignId      String
+  campaign        GoogleAdsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  accountId       String
+  account         GoogleAdsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  keyword         String
+  matchType       String   @default("PHRASE")
+  bidAmount       Float?
+  qualityScore    Int?
+  status          String   @default("ENABLED")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  @@unique([campaignId, date])
+  metrics GoogleAdsMetric[]
+
+  @@index([campaignId])
+  @@index([accountId])
+  @@map("google_ads_keywords")
+}
+
+model GoogleAdsMetric {
+  id              String   @id @default(uuid())
+  campaignId      String
+  campaign        GoogleAdsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  keywordId       String?
+  keyword         GoogleAdsKeyword? @relation(fields: [keywordId], references: [id], onDelete: SetNull)
+  date            DateTime
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  cost            Float    @default(0)
+  conversions     Int      @default(0)
+  conversionValue Float?
+  ctr             Float?
+  cpc             Float?
+  cpm             Float?
+  cpa             Float?
+  roas            Float?
+  averagePosition Float?
+  createdAt       DateTime @default(now())
+
+  @@unique([campaignId, keywordId, date])
   @@index([campaignId, date])
   @@map("google_ads_metrics")
 }
 
 model GoogleAdsReport {
-  id          String   @id @default(uuid())
-  accountId   String
-  account     GoogleAdsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  title       String
-  periodStart DateTime?
-  periodEnd   DateTime?
-  totalImpressions Int    @default(0)
-  totalClicks     Int    @default(0)
-  totalCost       Float  @default(0)
-  totalConversions Int   @default(0)
+  id                String   @id @default(uuid())
+  accountId         String
+  account           GoogleAdsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  title             String
+  periodStart       DateTime?
+  periodEnd         DateTime?
+  totalImpressions  Int      @default(0)
+  totalClicks       Int      @default(0)
+  totalCost         Float    @default(0)
+  totalConversions  Int      @default(0)
   totalConversionValue Float?
-  summary     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  averageCpc        Float?
+  averageCpa        Float?
+  averageRoas       Float?
+  summary           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([accountId])
   @@map("google_ads_reports")
@@ -2992,279 +3019,96 @@ model MetaAdsReport {
   @@map("meta_ads_reports")
 }
 
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PARTIALLY_PAID
-  PAID
-  OVERDUE
-  CANCELLED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  BANK_TRANSFER
-  CHEQUE
-  CASH
-  CREDIT_CARD
-  DEBIT_CARD
-  UPI
-  ONLINE
-  OTHER
-}
-
-enum ExpenseCategory {
-  SALARY
-  OFFICE_RENT
-  UTILITIES
-  SOFTWARE
-  MARKETING
-  TRAVEL
-  EQUIPMENT
-  PROFESSIONAL_FEES
-  TAXES
-  MEALS
-  VENDOR_PAYMENT
-  OTHER
-}
-
-model Invoice {
-  id              String        @id @default(uuid())
-  invoiceNumber   String
-  clientId        String
-  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  projectId       String?
-  project         Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  title           String
-  description     String?
-  status          InvoiceStatus @default(DRAFT)
-  invoiceDate     DateTime      @default(now())
-  dueDate         DateTime
-  subtotal        Float         @default(0)
-  taxRate         Float         @default(0)
-  taxAmount       Float         @default(0)
-  discountPercent Float         @default(0)
-  discountAmount  Float         @default(0)
-  total           Float         @default(0)
-  paidAmount      Float         @default(0)
-  balanceDue      Float         @default(0)
-  currency        String        @default("INR")
-  notes           String?
-  terms           String?
-  createdById     String?
-  createdBy       User?         @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  items       InvoiceItem[]
-  payments    Payment[]
-  receipts    Receipt[]
-
-  @@unique([clientId, invoiceNumber])
-  @@index([clientId, status])
-  @@index([dueDate])
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id        String @id @default(uuid())
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  service   String
-  description String?
-  quantity  Float   @default(1)
-  unitPrice Float   @default(0)
-  amount    Float   @default(0)
-
-  @@index([invoiceId])
-  @@map("invoice_items")
-}
-
-model Payment {
-  id        String        @id @default(uuid())
-  invoiceId String
-  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  clientId  String
-  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  amount    Float
-  method    PaymentMethod @default(ONLINE)
-  reference String?
-  date      DateTime      @default(now())
-  notes     String?
-  receivedById String?
-  receivedBy  User?       @relation("PaymentReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
-  createdAt DateTime      @default(now())
-
-  receipt Receipt?
-
-  @@index([invoiceId])
-  @@index([clientId, date])
-  @@map("payments")
-}
-
-model Receipt {
-  id        String  @id @default(uuid())
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  paymentId String  @unique
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  clientId  String
-  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  receiptNumber String
-  amount    Float
-  date      DateTime @default(now())
-  fileUrl   String?
-  notes     String?
-  createdAt DateTime @default(now())
-
-  @@unique([invoiceId, receiptNumber])
-  @@index([clientId, date])
-  @@map("receipts")
-}
-
-model Expense {
-  id          String         @id @default(uuid())
-  category    ExpenseCategory @default(OTHER)
-  description String
-  amount      Float
-  date        DateTime       @default(now())
-  vendorId    String?
-  vendor      Vendor?        @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  projectId   String?
-  project     Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  billable    Boolean        @default(false)
-  billableToClientId String?
-  billableToClient Client?   @relation(fields: [billableToClientId], references: [id], onDelete: SetNull)
-  paidBy      String?
-  paidByUser  User?         @relation("ExpensePaidBy", fields: [paidBy], references: [id], onDelete: SetNull)
-  receiptUrl  String?
-  notes       String?
-  taxAmount   Float          @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@index([category, date])
-  @@index([vendorId])
-  @@map("expenses")
-}
-
-model Vendor {
-  id        String   @id @default(uuid())
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  gst       String?
-  pan       String?
-  bankName  String?
-  accountNo String?
-  ifsc      String?
-  notes     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  expenses       Expense[]
-  vendorPayments VendorPayment[]
-
-  @@index([name])
-  @@map("vendors")
-}
-
-model VendorPayment {
-  id        String   @id @default(uuid())
-  vendorId  String
-  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  amount    Float
-  method    PaymentMethod @default(ONLINE)
-  reference String?
-  date      DateTime @default(now())
-  notes     String?
-  paidById  String?
-  paidBy    User?    @relation("VendorPaymentPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
-
-  @@index([vendorId, date])
-  @@map("vendor_payments")
-}
-
-model TaxDetail {
-  id        String  @id @default(uuid())
-  name      String
-  rate      Float
-  type      String  @default("PERCENTAGE")  // PERCENTAGE or FIXED
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("tax_details")
-}
-
-model AnalyticsSnapshot {
-  id        String   @id @default(uuid())
-  type      String   // REVENUE, EMPLOYEE, PROJECT, TICKET, ATTENDANCE, LEAD
-  label     String
-  value     Float
-  metadata  Json?
-  period    String   // DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
-
-  @@index([type, date])
-  @@index([period, date])
-  @@map("analytics_snapshots")
-}
-
-model KpiMetric {
+/* ─── Phase 27 - Analytics Center ─── */
+model AnalyticsDashboard {
   id          String   @id @default(uuid())
   name        String
-  label       String
-  category    String   // REVENUE, PRODUCTIVITY, CLIENTS, PROJECTS, TICKETS, ATTENDANCE, HR
-  value       Float    @default(0)
-  target      Float?
-  unit        String   @default("count")
-  trend       String   @default("neutral") // up, down, neutral
-  icon        String?
-  color       String?
   description String?
-  isActive    Boolean  @default(true)
+  layout      Json?
+  isDefault   Boolean  @default(false)
+  createdBy   String?
+  creator     User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([category])
-  @@map("kpi_metrics")
+  widgets AnalyticsWidget[]
+
+  @@map("analytics_dashboards")
 }
 
-model DashboardWidget {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // KPI_CARD, CHART, TABLE, LIST
-  config    Json
-  position  Int      @default(0)
-  size      String   @default("1x1") // 1x1, 2x1, 1x2, 2x2
-  isVisible Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model AnalyticsWidget {
+  id            String   @id @default(uuid())
+  dashboardId   String
+  dashboard     AnalyticsDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  title         String
+  type          String   @default("metric") // metric, bar, line, pie, table, area
+  dataSource    String   @default("manual") // manual, projects, tasks, finance, crm, seo, ads, attendance
+  metric        String?  // count, sum, avg, revenue, conversion, etc
+  queryConfig   Json?    // filter / group config stored as JSON
+  position      Int      @default(0)
+  width         Int      @default(1)
+  height        Int      @default(1)
+  color         String?  @default("#10b981")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  @@index([userId, position])
-  @@map("dashboard_widgets")
+  @@map("analytics_widgets")
 }
 
-model ReportExport {
+model AnalyticsReport {
   id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
-  type        String   // CEO_SUMMARY, REVENUE_REPORT, EMPLOYEE_REPORT, PROJECT_REPORT, TICKET_REPORT
-  format      String   @default("PDF")
-  config      Json?
-  fileUrl     String?
-  status      String   @default("PENDING") // PENDING, GENERATING, COMPLETED, FAILED
-  generatedAt DateTime?
+  description String?
+  type        String   @default("custom") // custom, weekly, monthly, quarterly
+  dataSource  String
+  filters     Json?
+  chartConfig Json?
+  snapshot    Json?    // stored data at generation time
+  generatedBy String?
+  generator   User?    @relation(fields: [generatedBy], references: [id], onDelete: SetNull)
+  generatedAt DateTime @default(now())
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([userId, createdAt])
-  @@map("report_exports")
+  @@map("analytics_reports")
 }
+
+model KpiDefinition {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   @default("general") // general, financial, project, sales, hr, marketing
+  unit        String?  // count, percentage, currency, hours, etc
+  targetValue Float
+  targetType  String   @default("monthly") // daily, weekly, monthly, quarterly, yearly
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  isActive    Boolean  @default(true)
+  createdBy   String?
+  creator     User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  results KpiResult[]
+
+  @@map("kpi_definitions")
+}
+
+model KpiResult {
+  id              String   @id @default(uuid())
+  kpiDefinitionId String
+  kpiDefinition   KpiDefinition @relation(fields: [kpiDefinitionId], references: [id], onDelete: Cascade)
+  actualValue     Float
+  periodStart     DateTime
+  periodEnd       DateTime
+  notes           String?
+  recordedBy      String?
+  recorder        User?    @relation(fields: [recordedBy], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+
+  @@index([kpiDefinitionId, periodStart])
+  @@map("kpi_results")
+}
+
+
